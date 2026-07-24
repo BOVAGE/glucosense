@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GlucoSense Enclosure Mechanical Visualizer</title>
+
+  <!-- Fonts and Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+  <style>
+    :root {
+      --color-bg: #090d16;
+      --color-bg-card: rgba(22, 29, 49, 0.65);
+      --color-border: rgba(255, 255, 255, 0.08);
+      --color-primary: #00f2fe;
+      --color-secondary: #4facfe;
+      --color-success: #10b981;
+      --color-warning: #f59e0b;
+      --color-danger: #ef4444;
+      --color-text: #f1f5f9;
+      --color-text-muted: #94a3b8;
+      --color-text-dim: #64748b;
+      --font-sans: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--color-bg);
+      background-image:
+        radial-gradient(at 0% 0%, rgba(79, 172, 254, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(0, 242, 254, 0.08) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--color-text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      border-bottom: 1px solid var(--color-border);
+      background: rgba(9, 13, 22, 0.8);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-logo {
+      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.25);
+      color: #090d16;
+      font-size: 1.25rem;
+    }
+
+    .brand-text h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      background: linear-gradient(to right, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 0.7rem;
+      color: var(--color-text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .header-link {
+      color: var(--color-primary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border: 1px solid rgba(0, 242, 254, 0.2);
+      border-radius: 50px;
+      background: rgba(0, 242, 254, 0.03);
+      transition: var(--transition);
+    }
+
+    .header-link:hover {
+      background: rgba(0, 242, 254, 0.1);
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.15);
+      border-color: var(--color-primary);
+    }
+
+    .container {
+      max-width: 1440px;
+      margin: 1.5rem auto;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: 320px 1fr 340px;
+      gap: 1.5rem;
+      flex: 1;
+    }
+
+    @media (max-width: 1200px) {
+      .container {
+        grid-template-columns: 280px 1fr;
+      }
+
+      .right-panel {
+        grid-column: span 2;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+
+      .left-panel,
+      .right-panel {
+        grid-column: auto;
+      }
+    }
+
+    .panel {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      height: fit-content;
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: var(--color-text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .panel-title i {
+      color: var(--color-primary);
+    }
+
+    /* Controls Panel Styling */
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .control-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--color-text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .layer-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0.75rem;
+      background: rgba(9, 13, 22, 0.4);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .layer-toggle:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      background: rgba(9, 13, 22, 0.6);
+    }
+
+    .layer-toggle.active {
+      border-color: rgba(0, 242, 254, 0.3);
+      background: rgba(0, 242, 254, 0.03);
+    }
+
+    .layer-info {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .layer-info i {
+      font-size: 1.1rem;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 32px;
+      height: 18px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--color-text-dim);
+      transition: .3s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 2px;
+      bottom: 2px;
+      background-color: #fff;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked+.slider {
+      background-color: var(--color-primary);
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(14px);
+    }
+
+    /* Range Slider Styling */
+    .range-wrap {
+      padding: 0.75rem 0.5rem;
+      background: rgba(9, 13, 22, 0.4);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .range-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .range-val {
+      font-family: var(--font-mono);
+      color: var(--color-primary);
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: var(--color-text-dim);
+      border-radius: 3px;
+      outline: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
+      transition: var(--transition);
+    }
+
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Visualizer Canvas */
+    .canvas-panel {
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(9, 13, 22, 0.35);
+      min-height: 500px;
+    }
+
+    .canvas-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .canvas-container svg {
+      transition: var(--transition);
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* SVG Hover Styles */
+    .interactive-part {
+      cursor: pointer;
+      transition: opacity 0.2s, stroke-width 0.2s;
+    }
+
+    .interactive-part:hover {
+      opacity: 0.95;
+      stroke: var(--color-primary) !important;
+      stroke-width: 2.5px !important;
+    }
+
+    /* Inspector Panel Styling */
+    .inspector-card {
+      background: rgba(9, 13, 22, 0.5);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      padding: 1rem;
+      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .inspector-placeholder {
+      color: var(--color-text-dim);
+      text-align: center;
+      padding: 1.5rem 0;
+      font-style: italic;
+    }
+
+    .inspector-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      color: var(--color-primary);
+      font-size: 0.95rem;
+    }
+
+    .pin-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+    }
+
+    .pin-table th {
+      color: var(--color-text-dim);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      text-align: left;
+      padding-bottom: 0.4rem;
+      border-bottom: 1.5px solid var(--color-border);
+    }
+
+    .pin-table td {
+      padding: 0.4rem 0;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.03);
+      color: var(--color-text-muted);
+    }
+
+    .pin-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .pin-val {
+      font-family: var(--font-mono);
+      color: var(--color-secondary);
+      font-weight: 600;
+    }
+
+    /* Assembly Guide Steps */
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: rgba(9, 13, 22, 0.3);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .step-item:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+      background: rgba(9, 13, 22, 0.5);
+    }
+
+    .step-item.active {
+      border-color: var(--color-success);
+      background: rgba(16, 185, 129, 0.03);
+    }
+
+    .step-number {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--color-text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      flex-shrink: 0;
+      transition: var(--transition);
+    }
+
+    .step-item.active .step-number {
+      background: var(--color-success);
+      color: #090d16;
+    }
+
+    .step-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .step-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .step-desc {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      line-height: 1.4;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-logo">
+        <i class="ti ti-box" aria-hidden="true"></i>
+      </div>
+      <div class="brand-text">
+        <h1>GlucoSense Enclosure Visualizer</h1>
+        <p>Mechanical Assembly & Layer Inspector</p>
+      </div>
+    </div>
+    <a href="../index.html" class="header-link">
+      <i class="ti ti-arrow-left" aria-hidden="true"></i> Back to Dashboard
+    </a>
+  </header>
+
+  <main class="container">
+
+    <!-- LEFT PANEL: Toggles & Visual Controls -->
+    <section class="panel left-panel">
+      <div class="panel-title">
+        <i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
+        <h2>Layer Visibility</h2>
+      </div>
+
+      <div class="control-group">
+        <label class="control-label">Exploded View Spacing</label>
+        <div class="range-wrap">
+          <div class="range-header">
+            <span>Explosion distance</span>
+            <span class="range-val" id="spacing-val">1.0x</span>
+          </div>
+          <input type="range" id="spacing-slider" min="0" max="2.5" step="0.1" value="1.0">
+        </div>
+      </div>
+
+      <div class="control-group" style="margin-top: 0.5rem;">
+        <label class="control-label">Toggle Enclosure Layers</label>
+
+        <div class="layer-toggle active" data-layer="lid">
+          <div class="layer-info">
+            <i class="ti ti-layout-row" style="color: var(--color-text-muted);"></i>
+            <span>Top Lid Cover</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-lid" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="layer-toggle active" data-layer="standoffs">
+          <div class="layer-info">
+            <i class="ti ti-binary" style="color: var(--color-warning);"></i>
+            <span>15mm Standoffs</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-standoffs" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="layer-toggle active" data-layer="veroboard">
+          <div class="layer-info">
+            <i class="ti ti-cpu" style="color: var(--color-success);"></i>
+            <span>Vero Board &amp; ESP32</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-veroboard" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="layer-toggle active" data-layer="sensor">
+          <div class="layer-info">
+            <i class="ti ti-activity-heartbeat" style="color: var(--color-danger);"></i>
+            <span>MAX30100 PPG Sensor</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-sensor" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="layer-toggle active" data-layer="wiring">
+          <div class="layer-info">
+            <i class="ti ti-git-fork" style="color: var(--color-primary);"></i>
+            <span>Wiring Harnesses</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-wiring" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- CENTER PANEL: Interactive SVG Assembly Drawing -->
+    <section class="panel canvas-panel">
+      <div class="canvas-container">
+
+        <!-- Embedded Exploded Assembly SVG -->
+        <svg id="exploded-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700">
+          <defs>
+            <!-- Metal Gold Gradient for Standoffs -->
+            <linearGradient id="brass-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f59e0b" />
+              <stop offset="50%" stop-color="#fbbf24" />
+              <stop offset="100%" stop-color="#b45309" />
+            </linearGradient>
+
+            <!-- Glass/Lid Gradient -->
+            <linearGradient id="lid-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="rgba(100, 116, 139, 0.45)" />
+              <stop offset="100%" stop-color="rgba(15, 23, 42, 0.75)" />
+            </linearGradient>
+
+            <!-- Vero Board (PCB Green) Gradient -->
+            <linearGradient id="pcb-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#064e3b" />
+              <stop offset="100%" stop-color="#022c22" />
+            </linearGradient>
+
+            <!-- Glowing Effects -->
+            <filter id="glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <filter id="glow-green" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+
+            <!-- Grid Pattern for Vero Board -->
+            <pattern id="vero-grid" width="10" height="10" patternUnits="userSpaceOnUse">
+              <circle cx="5" cy="5" r="1.2" fill="#fbbf24" opacity="0.35" />
+              <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#ffffff" stroke-width="0.3" opacity="0.05" />
+            </pattern>
+          </defs>
+
+          <style>
+            .svg-label {
+              font-family: 'Outfit', sans-serif;
+              font-size: 11px;
+              fill: #64748b;
+              font-weight: 500;
+            }
+
+            .svg-anno-title {
+              font-family: 'Outfit', sans-serif;
+              font-size: 12px;
+              fill: #38bdf8;
+              font-weight: 600;
+            }
+
+            .svg-anno-text {
+              font-family: 'Outfit', sans-serif;
+              font-size: 10px;
+              fill: #94a3b8;
+            }
+
+            .svg-wire {
+              fill: none;
+              stroke-linecap: round;
+              stroke-linejoin: round;
+              transition: stroke-width 0.2s, stroke 0.2s;
+            }
+
+            .svg-dashed-guide {
+              fill: none;
+              stroke: #475569;
+              stroke-width: 0.8;
+              stroke-dasharray: 4, 4;
+            }
+
+            .svg-group-transition {
+              transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+            }
+          </style>
+
+          <!-- TECHNICAL ALIGNMENT GUIDES -->
+          <g id="svg-guides">
+            <path class="svg-dashed-guide" d="M 230,195 L 230,480" />
+            <path class="svg-dashed-guide" d="M 570,195 L 570,480" />
+            <path class="svg-dashed-guide" d="M 270,235 L 270,520" />
+            <path class="svg-dashed-guide" d="M 610,235 L 610,520" />
+          </g>
+
+          <!-- WIRING HARNESS GROUP -->
+          <g id="svg-wiring" class="svg-group-transition">
+            <!-- Green Button Wires to Vero Pin 12 -->
+            <path id="wire-green" class="svg-wire" d="M 258,187 C 240,240 240,320 290,406" stroke="#22c55e"
+              stroke-width="1.5" />
+            <path class="svg-wire" d="M 262,187 C 244,240 244,320 294,406" stroke="#000000" stroke-width="1.5"
+              stroke-dasharray="2,2" />
+
+            <!-- Red Button Wires to Vero Pin 14 -->
+            <path id="wire-red" class="svg-wire" d="M 478,193 C 460,260 400,340 310,408" stroke="#ef4444"
+              stroke-width="1.5" />
+            <path class="svg-wire" d="M 482,193 C 464,260 404,340 314,408" stroke="#000000" stroke-width="1.5"
+              stroke-dasharray="2,2" />
+
+            <!-- OLED Wires to Vero Board Header -->
+            <path id="wire-oled" class="svg-wire" d="M 345,170 C 370,220 420,290 490,410" stroke="#f59e0b"
+              stroke-width="2.5" />
+            <path class="svg-wire" d="M 350,172 C 375,222 425,292 495,410" stroke="#3b82f6" stroke-width="1.5" />
+            <path class="svg-wire" d="M 355,174 C 380,224 430,294 500,410" stroke="#ef4444" stroke-width="1.5" />
+            <path class="svg-wire" d="M 360,176 C 385,226 435,296 505,410" stroke="#000000" stroke-width="1.5" />
+
+            <!-- MAX30100 Wires to Sensor Header -->
+            <path id="wire-sensor" class="svg-wire" d="M 570,320 C 580,360 550,420 512,412" stroke="#38bdf8"
+              stroke-width="2.5" />
+            <path class="svg-wire" d="M 572,322 C 582,362 552,422 514,412" stroke="#a855f7" stroke-width="1.5" />
+            <path class="svg-wire" d="M 574,324 C 584,364 554,424 516,412" stroke="#22c55e" stroke-width="1.5" />
+            <path class="svg-wire" d="M 576,326 C 586,366 556,426 518,412" stroke="#000000" stroke-width="1.5" />
+          </g>
+
+          <!-- LAYER 1: TOP LID + COMPONENTS -->
+          <g id="svg-lid" class="svg-group-transition">
+            <!-- Enclosure Lid -->
+            <polygon points="180,180 540,180 640,220 280,220" fill="url(#lid-grad)" stroke="#475569" stroke-width="1.5"
+              opacity="0.9" />
+
+            <!-- Cutouts in Lid -->
+            <polygon points="320,192 410,192 430,200 340,200" fill="#020617" stroke="#64748b" stroke-width="1" />
+            <ellipse cx="260" cy="198" rx="8" ry="4" fill="#020617" stroke="#64748b" />
+            <ellipse cx="480" cy="204" rx="8" ry="4" fill="#020617" stroke="#64748b" />
+
+            <!-- OLED Module -->
+            <g id="part-oled" class="interactive-part" transform="translate(330, 140)">
+              <polygon points="0,20 80,20 100,28 20,28" fill="#1e293b" stroke="#334155" stroke-width="1" />
+              <polygon points="15,22 75,22 88,27 28,27" fill="#0f172a" stroke="#00f2fe" stroke-width="1" />
+              <polygon points="25,23 65,23 75,27 35,27" fill="rgba(0, 242, 254, 0.15)" filter="url(#glow-cyan)" />
+              <text x="35" y="26" font-family="JetBrains Mono" font-size="5.5" fill="#00f2fe"
+                opacity="0.9">GLUCOSENSE</text>
+              <path d="M 10,24 L 10,32 M 15,25 L 15,33 M 20,26 L 20,34 M 25,27 L 25,35" stroke="#fbbf24"
+                stroke-width="1" />
+            </g>
+
+            <!-- Green Start Button -->
+            <g id="part-btn-green" class="interactive-part" transform="translate(260, 150)">
+              <ellipse cx="0" cy="0" rx="6" ry="3" fill="#22c55e" filter="url(#glow-green)" />
+              <path d="M -6,0 L -6,15 A 6,3 0 0 0 6,15 L 6,0 Z" fill="#22c55e" opacity="0.8" />
+              <path d="M -8,15 L -8,25 A 8,4 0 0 0 8,25 L 8,15 Z" fill="#64748b" />
+              <path d="M -2,27 L -2,37 M 2,27 L 2,37" stroke="#cbd5e1" stroke-width="1.2" />
+            </g>
+
+            <!-- Red Reset Button -->
+            <g id="part-btn-red" class="interactive-part" transform="translate(480, 156)">
+              <ellipse cx="0" cy="0" rx="6" ry="3" fill="#ef4444" />
+              <path d="M -6,0 L -6,15 A 6,3 0 0 0 6,15 L 6,0 Z" fill="#ef4444" opacity="0.8" />
+              <path d="M -8,15 L -8,25 A 8,4 0 0 0 8,25 L 8,15 Z" fill="#64748b" />
+              <path d="M -2,27 L -2,37 M 2,27 L 2,37" stroke="#cbd5e1" stroke-width="1.2" />
+            </g>
+
+            <!-- Screws -->
+            <g transform="translate(230, 195)">
+              <polygon points="-4,-10 4,-10 2,-4 -2,-4" fill="#cbd5e1" />
+              <line x1="0" y1="-4" x2="0" y2="0" stroke="#cbd5e1" stroke-width="1" />
+            </g>
+            <g transform="translate(570, 195)">
+              <polygon points="-4,-10 4,-10 2,-4 -2,-4" fill="#cbd5e1" />
+              <line x1="0" y1="-4" x2="0" y2="0" stroke="#cbd5e1" stroke-width="1" />
+            </g>
+          </g>
+
+          <!-- LAYER 2: 15 mm STANDOFFS -->
+          <g id="svg-standoffs" class="svg-group-transition">
+            <g id="part-standoff-1" transform="translate(230, 200)">
+              <rect x="-3.5" y="0" width="7" height="32" fill="url(#brass-grad)" stroke="#d97706" stroke-width="0.5" />
+              <ellipse cx="0" cy="0" rx="3.5" ry="1.5" fill="#fef08a" />
+              <ellipse cx="0" cy="32" rx="3.5" ry="1.5" fill="#b45309" />
+            </g>
+            <g id="part-standoff-2" transform="translate(570, 200)">
+              <rect x="-3.5" y="0" width="7" height="32" fill="url(#brass-grad)" stroke="#d97706" stroke-width="0.5" />
+              <ellipse cx="0" cy="0" rx="3.5" ry="1.5" fill="#fef08a" />
+              <ellipse cx="0" cy="32" rx="3.5" ry="1.5" fill="#b45309" />
+            </g>
+            <g id="part-standoff-3" transform="translate(270, 240)">
+              <rect x="-3.5" y="0" width="7" height="32" fill="url(#brass-grad)" stroke="#d97706" stroke-width="0.5" />
+              <ellipse cx="0" cy="0" rx="3.5" ry="1.5" fill="#fef08a" />
+              <ellipse cx="0" cy="32" rx="3.5" ry="1.5" fill="#b45309" />
+            </g>
+            <g id="part-standoff-4" transform="translate(610, 240)">
+              <rect x="-3.5" y="0" width="7" height="32" fill="url(#brass-grad)" stroke="#d97706" stroke-width="0.5" />
+              <ellipse cx="0" cy="0" rx="3.5" ry="1.5" fill="#fef08a" />
+              <ellipse cx="0" cy="32" rx="3.5" ry="1.5" fill="#b45309" />
+            </g>
+          </g>
+
+          <!-- LAYER 3: VERO BOARD + ESP32 -->
+          <g id="svg-veroboard" class="svg-group-transition">
+            <!-- Vero Board -->
+            <polygon points="180,240 540,240 640,280 280,280" fill="url(#pcb-grad)" stroke="#059669"
+              stroke-width="1.5" />
+            <polygon points="180,240 540,240 640,280 280,280" fill="url(#vero-grid)" />
+
+            <circle cx="230" cy="250" r="3" fill="#020617" stroke="#fbbf24" stroke-width="0.5" />
+            <circle cx="570" cy="250" r="3" fill="#020617" stroke="#fbbf24" stroke-width="0.5" />
+            <circle cx="270" cy="270" r="3" fill="#020617" stroke="#fbbf24" stroke-width="0.5" />
+            <circle cx="610" cy="270" r="3" fill="#020617" stroke="#fbbf24" stroke-width="0.5" />
+
+            <!-- ESP32 NodeMCU Board (Mounted underneath) -->
+            <g id="part-esp32" class="interactive-part" transform="translate(320, 252)">
+              <polygon points="0,10 140,10 160,18 20,18" fill="#1e293b" stroke="#475569" stroke-width="1" />
+              <polygon points="5,5 135,5 140,7 10,7" fill="#090d16" stroke="#334155" stroke-width="0.5" />
+              <polygon points="15,13 145,13 150,15 20,15" fill="#090d16" stroke="#334155" stroke-width="0.5" />
+              <polygon points="30,12 60,12 65,14 35,14" fill="#94a3b8" stroke="#cbd5e1" />
+              <!-- USB Port -->
+              <polygon points="-5,8 5,8 10,10 0,10" fill="#cbd5e1" stroke="#475569" />
+            </g>
+
+            <!-- USB Power Cable Plug (Side Wall interface) -->
+            <g id="part-usb" class="interactive-part" transform="translate(190, 260)">
+              <path d="M 12,8 L 30,8 L 30,16 L 12,16 Z" fill="#1e293b" stroke="#64748b" stroke-width="1" />
+              <path d="M 30,10 L 38,10 L 38,14 L 30,14 Z" fill="#cbd5e1" />
+              <path d="M 12,12 L -20,12" stroke="#475569" stroke-width="3" />
+            </g>
+          </g>
+
+          <!-- LAYER 4: ENCLOSURE WALLS & SENSOR -->
+          <g id="svg-sensor" class="svg-group-transition">
+            <!-- Box Walls (Right wall outline) -->
+            <polygon points="540,240 640,280 640,380 540,340" fill="none" stroke="#475569" stroke-width="1.2"
+              stroke-dasharray="2,2" />
+            <ellipse cx="590" cy="310" rx="14" ry="18" fill="#020617" stroke="#475569" stroke-width="1" />
+
+            <!-- MAX30100 Sensor Board -->
+            <g id="part-max30100" class="interactive-part" transform="translate(540, 275)">
+              <polygon points="15,10 40,20 40,50 15,40" fill="#064e3b" stroke="#059669" />
+              <polygon points="22,20 32,24 32,32 22,28" fill="#1e293b" stroke="#fbbf24" stroke-width="0.8" />
+              <circle cx="27" cy="26" r="3" fill="#ef4444" opacity="0.8" filter="url(#glow-green)" />
+              <circle cx="20" cy="40" r="1.2" fill="#fbbf24" />
+              <circle cx="25" cy="42" r="1.2" fill="#fbbf24" />
+              <circle cx="30" cy="44" r="1.2" fill="#fbbf24" />
+              <circle cx="35" cy="46" r="1.2" fill="#fbbf24" />
+            </g>
+          </g>
+
+          <!-- LABELS & POINTERS -->
+          <g id="svg-labels" opacity="0.8">
+            <path class="svg-dashed-guide" d="M 330,150 L 150,110" />
+            <text class="svg-anno-title" x="140" y="105" text-anchor="end">SSD1306 OLED (0.96")</text>
+            <text class="svg-anno-text" x="140" y="118" text-anchor="end">Screwed/Glued to Lid Cover</text>
+
+            <path class="svg-dashed-guide" d="M 260,150 L 120,175" />
+            <text class="svg-anno-title" x="110" y="170" text-anchor="end">Green Button (Start)</text>
+            <text class="svg-anno-text" x="110" y="183" text-anchor="end">Momentary Button (GPIO 12)</text>
+
+            <path class="svg-dashed-guide" d="M 230,225 L 110,260" />
+            <text class="svg-anno-title" x="100" y="255" text-anchor="end">15mm Standoffs</text>
+            <text class="svg-anno-text" x="100" y="268" text-anchor="end">Clearance spacing for buttons</text>
+
+            <path class="svg-dashed-guide" d="M 220,400 L 140,430" />
+            <text class="svg-anno-title" x="130" y="425" text-anchor="end">Vero Board (Upside Down)</text>
+            <text class="svg-anno-text" x="130" y="438" text-anchor="end">Header sockets pointing down</text>
+
+            <path class="svg-dashed-guide" d="M 195,268 L 130,320" />
+            <text class="svg-anno-title" x="120" y="315" text-anchor="end">USB Power Slot</text>
+            <text class="svg-anno-text" x="120" y="328" text-anchor="end">Cutout on left side wall</text>
+
+            <path class="svg-dashed-guide" d="M 480,156 L 680,140" />
+            <text class="svg-anno-title" x="690" y="135">Red Button (Reset)</text>
+            <text class="svg-anno-text" x="690" y="148">Next Session Trigger (GPIO 14)</text>
+
+            <path class="svg-dashed-guide" d="M 570,305 L 720,290" />
+            <text class="svg-anno-title" x="730" y="285">MAX30100 PPG Sensor</text>
+            <text class="svg-anno-text" x="730" y="298">Vertically mounted behind thumb aperture</text>
+
+            <path class="svg-dashed-guide" d="M 400,340 L 520,530" />
+            <text class="svg-anno-title" x="520" y="545" text-anchor="middle">Stranded Wire Harnesses</text>
+            <text class="svg-anno-text" x="520" y="558" text-anchor="middle">Detachable DuPont connections</text>
+          </g>
+        </svg>
+
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Pin Inspector & Assembly Instructions -->
+    <section class="panel right-panel">
+      <div class="panel-title">
+        <i class="ti ti-info-circle" aria-hidden="true"></i>
+        <h2>Component Inspector</h2>
+      </div>
+
+      <div class="inspector-card" id="inspector-card">
+        <div class="inspector-placeholder" id="inspector-placeholder">
+          Click on any component (OLED, button, sensor, or ESP32) in the diagram to inspect physical pin connections and
+          clearances.
+        </div>
+        <div id="inspector-content" style="display:none;">
+          <div class="inspector-header">
+            <i id="inspect-icon" class="ti ti-cpu"></i>
+            <span id="inspect-name">Component Name</span>
+          </div>
+          <p id="inspect-desc" style="font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.4;"></p>
+
+          <table class="pin-table" id="pin-table">
+            <thead>
+              <tr>
+                <th>Module Pin</th>
+                <th>ESP32 GPIO</th>
+                <th>Wire Color</th>
+              </tr>
+            </thead>
+            <tbody id="pin-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel-title" style="margin-top: 0.5rem;">
+        <i class="ti ti-list-numbers" aria-hidden="true"></i>
+        <h2>Assembly Helper</h2>
+      </div>
+
+      <div class="steps-list">
+        <div class="step-item" id="step1" data-step="1">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <div class="step-title">Vero Board Prep</div>
+            <div class="step-desc">Solder female headers &amp; male I2C pin rows onto the Vero board. Add 4.7kΩ I2C
+              pull-ups.</div>
+          </div>
+        </div>
+        <div class="step-item" id="step2" data-step="2">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <div class="step-title">Lid Component Mounting</div>
+            <div class="step-desc">Cut the OLED window. Drill button holes. Screw buttons and glue the OLED to the lid.
+            </div>
+          </div>
+        </div>
+        <div class="step-item" id="step3" data-step="3">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <div class="step-title">Mount Standoff Spacers</div>
+            <div class="step-desc">Secure four 15mm standoffs (spacers) to the top lid using M3 flat-head screws.</div>
+          </div>
+        </div>
+        <div class="step-item" id="step4" data-step="4">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <div class="step-title">Side Wall Customizations</div>
+            <div class="step-desc">Cut the side USB slot. Mount the MAX30100 sensor board vertically behind the thumb
+              tunnel hole.</div>
+          </div>
+        </div>
+        <div class="step-item" id="step5" data-step="5">
+          <div class="step-number">5</div>
+          <div class="step-content">
+            <div class="step-title">Vero Board Attachment &amp; Wire</div>
+            <div class="step-desc">Mount the Vero Board upside down on standoffs. Plug in all DuPont wire harnesses to
+              ESP32.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Layer references
+    const layers = {
+      lid: document.getElementById('svg-lid'),
+      standoffs: document.getElementById('svg-standoffs'),
+      veroboard: document.getElementById('svg-veroboard'),
+      sensor: document.getElementById('svg-sensor'),
+      wiring: document.getElementById('svg-wiring')
+    };
+
+    // Layer Y Offsets (Base values for explosion spacing)
+    const baseOffsets = {
+      lid: -160,
+      standoffs: -60,
+      veroboard: 20,
+      sensor: 100,
+      wiring: 0
+    };
+
+    // Spacing slider
+    const slider = document.getElementById('spacing-slider');
+    const spacingVal = document.getElementById('spacing-val');
+
+    function updateExplosion() {
+      const multiplier = parseFloat(slider.value);
+      spacingVal.textContent = multiplier.toFixed(1) + 'x';
+
+      for (const [key, element] of Object.entries(layers)) {
+        if (!element) continue;
+        const offset = baseOffsets[key] * multiplier;
+        // Apply vertical isometric displacement translation
+        element.style.transform = `translate(0px, ${offset}px)`;
+      }
+    }
+
+    slider.addEventListener('input', updateExplosion);
+    updateExplosion(); // Set initial positions
+
+    // Toggle layer check boxes
+    const toggles = {
+      lid: document.getElementById('toggle-lid'),
+      standoffs: document.getElementById('toggle-standoffs'),
+      veroboard: document.getElementById('toggle-veroboard'),
+      sensor: document.getElementById('toggle-sensor'),
+      wiring: document.getElementById('toggle-wiring')
+    };
+
+    for (const [key, checkbox] of Object.entries(toggles)) {
+      checkbox.addEventListener('change', () => {
+        const group = layers[key];
+        const container = checkbox.closest('.layer-toggle');
+        if (checkbox.checked) {
+          group.style.opacity = '1';
+          group.style.pointerEvents = 'auto';
+          container.classList.add('active');
+
+          // Show associated wires if toggling main components
+          if (key === 'wiring') {
+            document.getElementById('svg-wiring').style.opacity = '1';
+          }
+        } else {
+          group.style.opacity = '0';
+          group.style.pointerEvents = 'none';
+          container.classList.remove('active');
+        }
+      });
+    }
+
+    // Component inspection database
+    const componentData = {
+      oled: {
+        name: 'SSD1306 OLED Screen (128x64)',
+        icon: 'ti-device-tv',
+        desc: 'Displays participant details, status logs, and TinyML blood glucose/HR predictions. Panel-mounted directly to the lid cutout.',
+        pins: [
+          { module: 'VCC', esp32: '3.3V (VDD)', color: 'Red' },
+          { module: 'GND', esp32: 'GND', color: 'Black' },
+          { module: 'SDA', esp32: 'GPIO 21', color: 'Yellow' },
+          { module: 'SCL', esp32: 'GPIO 22', color: 'Blue' }
+        ]
+      },
+      'btn-green': {
+        name: 'Green Start Button',
+        icon: 'ti-player-play',
+        desc: 'Momentary pushbutton with internal pull-up. Pressing this button triggers the 10-second stabilization followed by a 60-second active PPG recording.',
+        pins: [
+          { module: 'Terminal A', esp32: 'GPIO 12', color: 'Green' },
+          { module: 'Terminal B', esp32: 'GND', color: 'Black' }
+        ]
+      },
+      'btn-red': {
+        name: 'Red Reset Button',
+        icon: 'ti-refresh',
+        desc: 'Momentary pushbutton with internal pull-up. Pressing this resets the FSM from completed scan state back to the ready screen for the next participant.',
+        pins: [
+          { module: 'Terminal A', esp32: 'GPIO 14', color: 'Red' },
+          { module: 'Terminal B', esp32: 'GND', color: 'Black' }
+        ]
+      },
+      esp32: {
+        name: 'ESP32 NodeMCU Board',
+        icon: 'ti-cpu',
+        desc: 'Runs the digital signal filtering, systolic peak detection, and RF/TinyML regressions. Socketed upside down under the lid to allow USB connector alignment.',
+        pins: [
+          { module: '3.3V', esp32: '3.3V Power Rail', color: 'Red' },
+          { module: 'GND', esp32: 'System Ground Rail', color: 'Black' },
+          { module: 'GPIO 21 (SDA)', esp32: 'I2C Data Bus', color: 'Yellow' },
+          { module: 'GPIO 22 (SCL)', esp32: 'I2C Clock Bus', color: 'Blue' },
+          { module: 'GPIO 12', esp32: 'Start Button input', color: 'Green' },
+          { module: 'GPIO 14', esp32: 'Reset Button input', color: 'Red' }
+        ]
+      },
+      max30100: {
+        name: 'GY-MAX30100 PPG Sensor',
+        icon: 'ti-activity-heartbeat',
+        desc: 'Samples infrared & red light absorption of the thumb capillary bed at 50Hz. Panel-mounted vertically behind the side thumb tunnel opening.',
+        pins: [
+          { module: 'VCC', esp32: '3.3V', color: 'Red (JST)' },
+          { module: 'GND', esp32: 'GND', color: 'Black (JST)' },
+          { module: 'SDA', esp32: 'GPIO 21', color: 'Yellow (JST)' },
+          { module: 'SCL', esp32: 'GPIO 22', color: 'Blue (JST)' }
+        ]
+      }
+    };
+
+    // Inspector nodes
+    const placeholder = document.getElementById('inspector-placeholder');
+    const content = document.getElementById('inspector-content');
+    const inspectIcon = document.getElementById('inspect-icon');
+    const inspectName = document.getElementById('inspect-name');
+    const inspectDesc = document.getElementById('inspect-desc');
+    const pinTableBody = document.getElementById('pin-table-body');
+
+    // Click events in SVG
+    const svgParts = {
+      oled: document.getElementById('part-oled'),
+      'btn-green': document.getElementById('part-btn-green'),
+      'btn-red': document.getElementById('part-btn-red'),
+      esp32: document.getElementById('part-esp32'),
+      max30100: document.getElementById('part-max30100')
+    };
+
+    function selectPart(key) {
+      // Clear visual wiring highlighting
+      document.querySelectorAll('.svg-wire').forEach(w => {
+        w.style.strokeWidth = w.id === 'wire-oled' || w.id === 'wire-sensor' ? '2.5px' : '1.5px';
+        w.style.filter = '';
+      });
+
+      if (!key || !componentData[key]) {
+        placeholder.style.display = 'block';
+        content.style.display = 'none';
+        return;
+      }
+
+      placeholder.style.display = 'none';
+      content.style.display = 'block';
+
+      const data = componentData[key];
+      inspectIcon.className = `ti ${data.icon}`;
+      inspectName.textContent = data.name;
+      inspectDesc.textContent = data.desc;
+
+      // Populate pin table
+      pinTableBody.innerHTML = '';
+      data.pins.forEach(pin => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${pin.module}</td>
+          <td class="pin-val">${pin.esp32}</td>
+          <td style="color: ${pin.color === 'Black' ? '#64748b' : pin.color.split(' ')[0].toLowerCase()}">${pin.color}</td>
+        `;
+        pinTableBody.appendChild(tr);
+      });
+
+      // Highlight wires on visualization
+      const wire = document.getElementById(`wire-${key}`);
+      if (wire) {
+        wire.style.strokeWidth = '4.5px';
+        wire.style.filter = 'url(#glow-cyan)';
+      }
+    }
+
+    for (const [key, el] of Object.entries(svgParts)) {
+      if (el) {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectPart(key);
+        });
+      }
+    }
+
+    // Clear inspector when clicking canvas backdrop
+    document.querySelector('.canvas-panel').addEventListener('click', () => {
+      selectPart(null);
+    });
+
+    // Assembly Step Guide Interactions
+    const steps = document.querySelectorAll('.step-item');
+    steps.forEach(step => {
+      step.addEventListener('click', () => {
+        steps.forEach(s => s.classList.remove('active'));
+        step.classList.add('active');
+
+        const stepNum = step.getAttribute('data-step');
+
+        // Highlight step visual representation (explosion spacing / opacity adjustments)
+        if (stepNum === '1') {
+          // Highlight Vero Board / ESP32
+          slider.value = '1.2';
+          updateExplosion();
+          selectPart('esp32');
+          toggles.lid.checked = false; toggles.lid.dispatchEvent(new Event('change'));
+          toggles.standoffs.checked = false; toggles.standoffs.dispatchEvent(new Event('change'));
+          toggles.veroboard.checked = true; toggles.veroboard.dispatchEvent(new Event('change'));
+          toggles.sensor.checked = false; toggles.sensor.dispatchEvent(new Event('change'));
+        } else if (stepNum === '2') {
+          // Highlight Lid and its panel components
+          slider.value = '1.0';
+          updateExplosion();
+          selectPart('oled');
+          toggles.lid.checked = true; toggles.lid.dispatchEvent(new Event('change'));
+          toggles.standoffs.checked = false; toggles.standoffs.dispatchEvent(new Event('change'));
+          toggles.veroboard.checked = false; toggles.veroboard.dispatchEvent(new Event('change'));
+          toggles.sensor.checked = false; toggles.sensor.dispatchEvent(new Event('change'));
+        } else if (stepNum === '3') {
+          // Highlight Standoffs
+          slider.value = '1.4';
+          updateExplosion();
+          selectPart(null);
+          toggles.lid.checked = true; toggles.lid.dispatchEvent(new Event('change'));
+          toggles.standoffs.checked = true; toggles.standoffs.dispatchEvent(new Event('change'));
+          toggles.veroboard.checked = true; toggles.veroboard.dispatchEvent(new Event('change'));
+          toggles.sensor.checked = false; toggles.sensor.dispatchEvent(new Event('change'));
+        } else if (stepNum === '4') {
+          // Highlight sensor and side wall
+          slider.value = '0.8';
+          updateExplosion();
+          selectPart('max30100');
+          toggles.lid.checked = false; toggles.lid.dispatchEvent(new Event('change'));
+          toggles.standoffs.checked = false; toggles.standoffs.dispatchEvent(new Event('change'));
+          toggles.veroboard.checked = false; toggles.veroboard.dispatchEvent(new Event('change'));
+          toggles.sensor.checked = true; toggles.sensor.dispatchEvent(new Event('change'));
+        } else if (stepNum === '5') {
+          // Complete view, show wiring
+          slider.value = '0.5';
+          updateExplosion();
+          selectPart(null);
+          toggles.lid.checked = true; toggles.lid.dispatchEvent(new Event('change'));
+          toggles.standoffs.checked = true; toggles.standoffs.dispatchEvent(new Event('change'));
+          toggles.veroboard.checked = true; toggles.veroboard.dispatchEvent(new Event('change'));
+          toggles.sensor.checked = true; toggles.sensor.dispatchEvent(new Event('change'));
+          toggles.wiring.checked = true; toggles.wiring.dispatchEvent(new Event('change'));
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

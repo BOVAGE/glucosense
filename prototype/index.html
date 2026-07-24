@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlucoSense Hub — PPG Data Collection & Research Portal</title>
+    <meta name="description" content="A real-time data acquisition and management dashboard for non-invasive blood glucose estimation research using PPG and machine learning.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Tabler Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    
+    <style>
+        :root {
+            --color-bg: #090d16;
+            --color-bg-card: rgba(22, 29, 49, 0.6);
+            --color-border: rgba(255, 255, 255, 0.08);
+            --color-primary: #00f2fe;
+            --color-primary-rgb: 0, 242, 254;
+            --color-secondary: #4facfe;
+            --color-success: #10b981;
+            --color-warning: #f59e0b;
+            --color-danger: #ef4444;
+            --color-text: #f1f5f9;
+            --color-text-muted: #94a3b8;
+            --color-text-dim: #64748b;
+            --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--color-bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(79, 172, 254, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(0, 242, 254, 0.1) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--color-text);
+            font-family: var(--font-sans);
+            line-height: 1.5;
+            min-height: 100vh;
+            padding-bottom: 2rem;
+        }
+
+        header {
+            border-bottom: 1px solid var(--color-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            background: rgba(9, 13, 22, 0.8);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-logo {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+        }
+
+        .brand-logo i {
+            font-size: 1.5rem;
+            color: #090d16;
+        }
+
+        .brand-text h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text p {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+            letter-spacing: 0.02em;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--color-border);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .status-badge.connected {
+            border-color: rgba(16, 185, 129, 0.2);
+            color: var(--color-success);
+        }
+
+        .status-badge.disconnected {
+            border-color: rgba(239, 68, 68, 0.2);
+            color: var(--color-danger);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: currentColor;
+            display: inline-block;
+        }
+
+        .status-dot.pulse {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.4; }
+            100% { transform: scale(0.9); opacity: 1; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 992px) {
+            .container {
+                grid-template-columns: 3fr 4fr;
+            }
+            .full-width {
+                grid-column: span 2;
+            }
+        }
+
+        /* Glass Cards */
+        .card {
+            background: var(--color-bg-card);
+            border: 1px solid var(--color-border);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+            transition: var(--transition);
+        }
+
+        .card:hover::before {
+            background: linear-gradient(90deg, transparent, var(--color-primary), var(--color-secondary), transparent);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--color-text);
+            border-bottom: 1px solid var(--color-border);
+            padding-bottom: 1rem;
+        }
+
+        .card-title i {
+            color: var(--color-primary);
+            font-size: 1.4rem;
+        }
+
+        /* Forms */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+        }
+
+        @media (min-width: 576px) {
+            .form-grid-2 {
+                grid-template-columns: 1fr 1fr;
+            }
+            .form-grid-3 {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group.full-col {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--color-text-muted);
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+        }
+
+        input, select {
+            background: rgba(9, 13, 22, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: 10px;
+            color: var(--color-text);
+            font-family: var(--font-sans);
+            font-size: 0.95rem;
+            padding: 0.75rem 1rem;
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.15);
+            background: rgba(9, 13, 22, 0.7);
+        }
+
+        input::placeholder {
+            color: var(--color-text-dim);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border: none;
+            border-radius: 10px;
+            color: #090d16;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            padding: 0.85rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 242, 254, 0.35);
+            opacity: 0.95;
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: var(--color-text-dim);
+            color: var(--color-bg);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.5;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--color-border);
+            color: var(--color-text);
+            box-shadow: none;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--color-text-muted);
+            box-shadow: none;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+        }
+
+        /* Config Panel */
+        .config-panel {
+            grid-column: span 2;
+        }
+
+        .config-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+            align-items: flex-end;
+        }
+
+        .config-form .form-group {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        /* Active Session Monitor */
+        .session-monitor-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            height: 100%;
+        }
+
+        .monitor-state-box {
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+            min-height: 180px;
+            border: 1px dashed var(--color-border);
+            background: rgba(9, 13, 22, 0.3);
+        }
+
+        .monitor-state-box.active-pending {
+            border-color: rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, 0.03);
+        }
+
+        .monitor-state-box.active-recording {
+            border-color: rgba(79, 172, 254, 0.4);
+            background: rgba(79, 172, 254, 0.03);
+            animation: borderGlow 2s infinite ease-in-out;
+        }
+
+        .monitor-state-box.active-uploaded {
+            border-color: rgba(16, 185, 129, 0.4);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        @keyframes borderGlow {
+            0% { border-color: rgba(79, 172, 254, 0.2); box-shadow: inset 0 0 10px rgba(79, 172, 254, 0.05); }
+            50% { border-color: rgba(79, 172, 254, 0.7); box-shadow: inset 0 0 20px rgba(79, 172, 254, 0.15); }
+            100% { border-color: rgba(79, 172, 254, 0.2); box-shadow: inset 0 0 10px rgba(79, 172, 254, 0.05); }
+        }
+
+        .state-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .active-pending .state-icon {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--color-warning);
+        }
+
+        .active-recording .state-icon {
+            background: rgba(79, 172, 254, 0.1);
+            color: var(--color-secondary);
+        }
+
+        .active-uploaded .state-icon {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--color-success);
+            animation: bounce 1s infinite alternate;
+        }
+
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-8px); }
+        }
+
+        .state-title-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        .state-desc-text {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+            max-width: 320px;
+        }
+
+        /* Detail List */
+        .session-meta-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            background: rgba(9, 13, 22, 0.4);
+            border: 1px solid var(--color-border);
+            padding: 1.25rem;
+            border-radius: 12px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--color-text-dim);
+            letter-spacing: 0.05em;
+        }
+
+        .meta-value {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--color-text);
+        }
+
+        .meta-value.mono {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--color-primary);
+        }
+
+        /* BGL Form Panel */
+        .bgl-input-panel {
+            background: rgba(16, 185, 129, 0.04);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            padding: 1.5rem;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(15px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Table */
+        .table-responsive {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            background: rgba(9, 13, 22, 0.2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: rgba(9, 13, 22, 0.6);
+            color: var(--color-text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--color-text-muted);
+            transition: var(--transition);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+            color: #fff;
+        }
+
+        .td-highlight {
+            color: var(--color-text);
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .badge-pending {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--color-warning);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-recording {
+            background: rgba(79, 172, 254, 0.1);
+            color: var(--color-secondary);
+            border: 1px solid rgba(79, 172, 254, 0.2);
+        }
+
+        .badge-uploaded {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--color-success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-completed {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--color-text-muted);
+            border: 1px solid var(--color-border);
+        }
+
+        .table-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .bgl-value-tag {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        /* Notification Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: rgba(22, 29, 49, 0.95);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 1000;
+            transform: translateY(150%);
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        .toast i {
+            font-size: 1.25rem;
+        }
+
+        .toast-success i { color: var(--color-success); }
+        .toast-info i { color: var(--color-primary); }
+        .toast-warning i { color: var(--color-warning); }
+        .toast-error i { color: var(--color-danger); }
+
+        /* Mobile Responsiveness Media Queries */
+        @media (max-width: 991px) {
+            .config-panel {
+                grid-column: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 0.75rem 1rem;
+                flex-direction: column;
+                gap: 0.75rem;
+                text-align: center;
+            }
+            
+            .brand {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            .brand-text h1 {
+                font-size: 1.1rem;
+            }
+
+            .brand-text p {
+                font-size: 0.65rem;
+                text-align: center;
+            }
+
+            .container {
+                margin: 1rem auto;
+                padding: 0 0.75rem;
+                gap: 1.5rem;
+            }
+
+            .card {
+                padding: 1.25rem;
+                border-radius: 16px;
+            }
+
+            .table-actions {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+                text-align: center;
+            }
+
+            .table-actions .card-title {
+                justify-content: center;
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+            .table-actions > div {
+                display: flex;
+                flex-direction: column !important;
+                gap: 0.5rem;
+                width: 100%;
+            }
+
+            .table-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .toast {
+                left: 1rem;
+                right: 1rem;
+                bottom: 1rem;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .config-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .config-form .form-group {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .config-form .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .session-meta-list {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            #bgl-form {
+                flex-direction: column !important;
+                align-items: stretch !important;
+            }
+
+            #bgl-form .form-group {
+                width: 100% !important;
+            }
+
+            #bgl-form .btn {
+                width: 100% !important;
+                height: 44px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Notification Sound (Polite low synth ping for success alerts) -->
+    <audio id="audio-success" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav" preload="auto"></audio>
+
+    <header>
+        <div class="brand">
+            <div class="brand-logo">
+                <i class="ti ti-activity-heartbeat" aria-hidden="true"></i>
+            </div>
+            <div class="brand-text">
+                <h1>GLUCOSENSE HUB</h1>
+                <p>PPG DATA ACQUISITION & RESEARCH</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <div id="connection-status" class="status-badge disconnected">
+                <span class="status-dot"></span>
+                <span class="status-text">Supabase Offline</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        
+        <!-- Configuration Card -->
+        <section id="config-card" class="card config-panel">
+            <div class="card-title">
+                <i class="ti ti-settings" aria-hidden="true"></i>
+                <h2>Supabase Credentials & Configuration</h2>
+            </div>
+            <form id="db-config-form" class="config-form" onsubmit="saveConfig(event)">
+                <div class="form-group">
+                    <label for="sb-url">Supabase Project URL</label>
+                    <input type="url" id="sb-url" required placeholder="https://your-project-id.supabase.co" aria-required="true">
+                </div>
+                <div class="form-group">
+                    <label for="sb-key">Anon Public API Key</label>
+                    <input type="password" id="sb-key" required placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." aria-required="true">
+                </div>
+                <button type="submit" class="btn">
+                    <i class="ti ti-link" aria-hidden="true"></i> Connect API
+                </button>
+            </form>
+        </section>
+
+        <!-- Left Column: Registration & Session Controller -->
+        <div style="display:flex; flex-direction:column; gap:2rem;">
+            <!-- Participant Demographics Card -->
+            <section class="card" id="participant-card">
+                <div class="card-title">
+                    <i class="ti ti-user-plus" aria-hidden="true"></i>
+                    <h2>1. Participant Profiles</h2>
+                </div>
+                
+                <form id="registration-form" onsubmit="saveParticipant(event)" class="form-grid">
+                    <div class="form-grid-2 form-grid">
+                        <div class="form-group">
+                            <label for="participant-id">
+                                Participant ID 
+                                <span id="participant-lookup-status" style="font-size:0.75rem; text-transform:none; color:var(--color-primary); margin-left:0.5rem; display:none;"></span>
+                            </label>
+                            <input type="text" id="participant-id" required placeholder="P001" pattern="^[a-zA-Z0-9_-]+$" title="Only letters, numbers, dash or underscore" onblur="lookupParticipant()" aria-required="true">
+                        </div>
+                        <div class="form-group">
+                            <label for="age">Age (Years)</label>
+                            <input type="number" id="age" required min="1" max="120" placeholder="54" aria-required="true">
+                        </div>
+                    </div>
+
+                    <div class="form-grid-3 form-grid">
+                        <div class="form-group">
+                            <label for="gender">Gender</label>
+                            <select id="gender" required aria-required="true">
+                                <option value="" disabled selected>Select</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="weight">Weight (kg)</label>
+                            <input type="number" id="weight" required min="10" max="250" step="0.1" placeholder="72.5" aria-required="true">
+                        </div>
+                        <div class="form-group">
+                            <label for="height">Height (cm)</label>
+                            <input type="number" id="height" required min="50" max="250" step="0.1" placeholder="175" aria-required="true">
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2 form-grid">
+                        <div class="form-group">
+                            <label for="t2dm-years">Years with T2DM</label>
+                            <input type="number" id="t2dm-years" required min="0" max="80" placeholder="5" aria-required="true">
+                        </div>
+                        <div class="form-group">
+                            <label for="medication">Medication (Optional)</label>
+                            <input type="text" id="medication" placeholder="e.g. Metformin, None">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btn-save-participant" class="btn" style="margin-top: 0.5rem;" disabled>
+                        <i class="ti ti-device-floppy" aria-hidden="true"></i> Save Participant Profile
+                    </button>
+                </form>
+            </section>
+
+            <!-- Admin Session Controller Card -->
+            <section class="card" id="admin-dispatch-card">
+                <div class="card-title">
+                    <i class="ti ti-device-heart-monitor" aria-hidden="true"></i>
+                    <h2>2. Admin Session Controller</h2>
+                </div>
+                
+                <form id="dispatch-form" onsubmit="dispatchSession(event)" class="form-grid">
+                    <div class="form-group">
+                        <label for="dispatch-participant-select">Select Participant</label>
+                        <select id="dispatch-participant-select" required aria-required="true">
+                            <option value="" disabled selected>Connect Supabase first</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dispatch-session-kind">Session Timing</label>
+                        <select id="dispatch-session-kind" required aria-required="true">
+                            <option value="" disabled selected>Select Kind</option>
+                            <option value="fasting">Fasting</option>
+                            <option value="1hr_post_prandial">1hr Post Prandial</option>
+                            <option value="2hr_post_prandial">2hr Post Prandial</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" id="btn-dispatch" class="btn" style="margin-top: 0.5rem;" disabled>
+                        <i class="ti ti-send" aria-hidden="true"></i> Dispatch Session to ESP32
+                    </button>
+                </form>
+            </section>
+        </div>
+
+        <!-- Right Column: Active Session & BGL Logger -->
+        <section class="card" id="active-monitor-card">
+            <div class="card-title">
+                <i class="ti ti-radar" aria-hidden="true"></i>
+                <h2>2. Active Session Monitor</h2>
+            </div>
+
+            <div class="session-monitor-container">
+                <!-- Monitor Box -->
+                <div id="monitor-state" class="monitor-state-box">
+                    <div class="state-icon">
+                        <i class="ti ti-wifi-off" id="monitor-icon" aria-hidden="true"></i>
+                    </div>
+                    <div class="state-title-text" id="monitor-title">No Active Session</div>
+                    <div class="state-desc-text" id="monitor-desc">Connect Supabase API first, then fill out the form on the left to dispatch a session.</div>
+                </div>
+
+                <!-- Session Meta Info -->
+                <div id="active-session-details" class="session-meta-list" style="display: none;">
+                    <div class="meta-item">
+                        <span class="meta-label">Session ID</span>
+                        <span class="meta-value mono" id="active-sess-id">—</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Participant</span>
+                        <span class="meta-value" id="active-part-id">—</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Measurements</span>
+                        <span class="meta-value" id="active-metrics">—</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">State / Kind</span>
+                        <span class="meta-value" id="active-kind">—</span>
+                    </div>
+                </div>
+
+                <!-- Session Admin Actions -->
+                <div id="active-session-actions" style="display: none; margin-top: 1rem;">
+                    <button onclick="cancelActiveSession()" class="btn btn-outline btn-danger" style="width: 100%; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.05); color: var(--color-danger); justify-content: center; gap: 0.5rem;" title="Cancel and delete active session">
+                        <i class="ti ti-trash-x" aria-hidden="true"></i> Cancel & Delete Active Session
+                    </button>
+                </div>
+
+                <!-- BGL Input Panel (Shows only when status is 'uploaded') -->
+                <div id="bgl-entry-panel" class="bgl-input-panel" style="display: none;">
+                    <div style="display:flex; align-items:center; gap:0.5rem; color:var(--color-success);">
+                        <i class="ti ti-discount-check" style="font-size:1.4rem" aria-hidden="true"></i>
+                        <h3 style="font-size:1rem; font-weight:600;">PPG Sample Collected</h3>
+                    </div>
+                    <p style="font-size:0.85rem; color:var(--color-text-muted)">3,500 infrared wave samples are saved in database. Take the participant's finger-prick BGL and log the value below.</p>
+                    
+                    <form id="bgl-form" onsubmit="submitBGL(event)" style="display:flex; gap:10px; align-items:flex-end;">
+                        <div class="form-group" style="flex:1;">
+                            <label for="bgl-val">Blood Glucose Level (mg/dL)</label>
+                            <input type="number" id="bgl-val" required min="20" max="600" step="0.1" placeholder="126.0" aria-required="true">
+                        </div>
+                        <button type="submit" class="btn" style="height: 44px;">
+                            <i class="ti ti-checkbox" aria-hidden="true"></i> Complete
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Complete state info -->
+                <div id="session-complete-actions" style="display:none; text-align: center;">
+                    <button onclick="resetActiveMonitor()" class="btn btn-outline" style="width: 100%;">
+                        <i class="ti ti-refresh" aria-hidden="true"></i> Clear & Prepare Next Session
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom Panel: Historical Sessions Grid -->
+        <section class="card full-width" id="history-card">
+            <div class="table-actions">
+                <div class="card-title" style="border:none; padding:0; margin:0;">
+                    <i class="ti ti-database" aria-hidden="true"></i>
+                    <h2>3. Database Records</h2>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="refreshHistoryTable()" class="btn btn-outline btn-sm" id="btn-refresh-table" disabled title="Refresh table data">
+                        <i class="ti ti-reload" aria-hidden="true"></i> Reload Table
+                    </button>
+                    <button onclick="exportCSV()" class="btn btn-sm" id="btn-export-csv" disabled title="Export data to CSV">
+                        <i class="ti ti-download" aria-hidden="true"></i> Export CSV for Python
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table id="history-table" aria-label="PPG and BGL database records">
+                    <thead>
+                        <tr>
+                            <th>Created At</th>
+                            <th>Participant ID</th>
+                            <th>Demographics</th>
+                            <th>T2DM (Yrs)</th>
+                            <th>Timing Kind</th>
+                            <th>Samples</th>
+                            <th>BGL (mg/dL)</th>
+                            <th>Status</th>
+                            <th style="width: 80px; text-align: center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tbody">
+                        <tr>
+                            <td colspan="9" style="text-align: center; color: var(--color-text-dim); padding: 2.5rem 0;">
+                                Supabase not connected. Credentials required above.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast Banner -->
+    <div id="toast" class="toast" role="alert" aria-live="assertive">
+        <i id="toast-icon" class="ti ti-info-circle" aria-hidden="true"></i>
+        <span id="toast-msg">Notification Message</span>
+    </div>
+
+    <!-- Supabase JS Library from Local Assets (Offline Friendly) -->
+    <script src="assets/js/supabase-js.js"></script>
+    
+    <script>
+        let supabaseClient = null;
+        let activeSession = null;
+        let channelSubscription = null;
+
+        // Auto-load config on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedUrl = localStorage.getItem('supabase_url');
+            const savedKey = localStorage.getItem('supabase_key');
+            if (savedUrl && savedKey) {
+                document.getElementById('sb-url').value = savedUrl;
+                document.getElementById('sb-key').value = savedKey;
+                connectSupabase(savedUrl, savedKey);
+            }
+        });
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toast-icon');
+            const toastMsg = document.getElementById('toast-msg');
+            
+            toast.className = `toast toast-${type} show`;
+            toastMsg.textContent = message;
+
+            // Select icons based on status
+            const icons = {
+                success: 'ti-circle-check',
+                info: 'ti-info-circle',
+                warning: 'ti-alert-triangle',
+                error: 'ti-circle-x'
+            };
+            toastIcon.className = `ti ${icons[type] || 'ti-info-circle'}`;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        function playAlertSound() {
+            const audio = document.getElementById('audio-success');
+            if (audio) {
+                audio.play().catch(e => console.log('Audio playback failed: user interaction required first.'));
+            }
+        }
+
+        function saveConfig(e) {
+            e.preventDefault();
+            const url = document.getElementById('sb-url').value.trim();
+            const key = document.getElementById('sb-key').value.trim();
+            
+            localStorage.setItem('supabase_url', url);
+            localStorage.setItem('supabase_key', key);
+            
+            connectSupabase(url, key);
+        }
+
+        async function connectSupabase(url, key) {
+            try {
+                // Initialize Client
+                supabaseClient = supabase.createClient(url, key);
+                
+                // Test simple connection query
+                const { data, error } = await supabaseClient
+                    .from('participants')
+                    .select('id')
+                    .limit(1);
+
+                if (error) throw error;
+
+                // Update UI Status Badge
+                const statusBadge = document.getElementById('connection-status');
+                statusBadge.className = 'status-badge connected';
+                statusBadge.querySelector('.status-dot').className = 'status-dot'; // remove pulse if any
+                statusBadge.querySelector('.status-text').textContent = 'Supabase Connected';
+                
+                // Enable dispatch button, save button, and table button
+                document.getElementById('btn-save-participant').disabled = false;
+                document.getElementById('btn-dispatch').disabled = false;
+                document.getElementById('btn-refresh-table').disabled = false;
+                
+                showToast('Successfully connected to Supabase API', 'success');
+
+                // Load initial tables
+                refreshHistoryTable();
+                checkPendingSession();
+                subscribeRealtime();
+                loadParticipantsDropdown();
+
+            } catch (err) {
+                console.error(err);
+                const statusBadge = document.getElementById('connection-status');
+                statusBadge.className = 'status-badge disconnected';
+                statusBadge.querySelector('.status-text').textContent = 'Connection Error';
+                
+                document.getElementById('btn-save-participant').disabled = true;
+                document.getElementById('btn-dispatch').disabled = true;
+                document.getElementById('btn-refresh-table').disabled = true;
+                document.getElementById('btn-export-csv').disabled = true;
+                
+                showToast('Failed to connect to Supabase: ' + err.message, 'error');
+            }
+        }
+
+        // Subscribes to realtime updates of database changes
+        function subscribeRealtime() {
+            if (channelSubscription) {
+                supabaseClient.removeChannel(channelSubscription);
+            }
+
+            channelSubscription = supabaseClient
+                .channel('schema-db-changes')
+                .on(
+                    'postgres_changes', 
+                    { event: '*', schema: 'public', table: 'ppg_sessions' }, 
+                    payload => {
+                        console.log('Realtime database event (session):', payload);
+                        
+                        // If it corresponds to our active session, update state
+                        if (activeSession && payload.new && payload.new.id === activeSession.id) {
+                            // Since payload.new belongs to ppg_sessions table, it doesn't have participant details
+                            // Merge details from current activeSession or fetch fresh values
+                            const updatedSession = { ...activeSession, ...payload.new };
+                            activeSession = updatedSession;
+                            updateMonitorUI();
+                            
+                            if (payload.new.status === 'uploaded') {
+                                playAlertSound();
+                                showToast('ESP32 data acquisition uploaded successfully!', 'success');
+                            }
+                        }
+                        
+                        // Always refresh history table on database updates
+                        refreshHistoryTable();
+                    }
+                )
+                .subscribe();
+        }
+
+        // Checks if there's already an incomplete/active session in database
+        async function checkPendingSession() {
+            if (!supabaseClient) return;
+
+            // Query the View instead of the table to get the complete demographics
+            const { data, error } = await supabaseClient
+                .from('v_sessions_details')
+                .select('*')
+                .in('status', ['pending', 'recording', 'uploaded'])
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            if (data && data.length > 0) {
+                const s = data[0];
+                // Map view field names to expected UI names
+                activeSession = {
+                    id: s.session_id,
+                    created_at: s.created_at,
+                    participant_id: s.participant_id,
+                    age: s.age,
+                    gender: s.gender,
+                    weight: s.weight_kg,
+                    height: s.height_cm,
+                    years_on_t2dm: s.years_on_t2dm,
+                    session_kind: s.session_kind,
+                    ppg_data: s.ppg_data,
+                    bgl: s.bgl,
+                    status: s.status
+                };
+                updateMonitorUI();
+            }
+        }
+
+        // Autofill participant lookups
+        async function lookupParticipant() {
+            if (!supabaseClient) return;
+            const pId = document.getElementById('participant-id').value.trim();
+            const statusLabel = document.getElementById('participant-lookup-status');
+
+            if (!pId) {
+                statusLabel.style.display = 'none';
+                return;
+            }
+
+            statusLabel.style.display = 'inline';
+            statusLabel.style.color = 'var(--color-text-dim)';
+            statusLabel.textContent = 'Searching...';
+
+            const { data, error } = await supabaseClient
+                .from('participants')
+                .select('*')
+                .eq('participant_id', pId)
+                .maybeSingle();
+
+            if (error) {
+                console.error(error);
+                statusLabel.style.display = 'none';
+                return;
+            }
+
+            if (data) {
+                statusLabel.style.color = 'var(--color-success)';
+                statusLabel.textContent = '✓ Profile Loaded';
+                
+                // Populate inputs
+                document.getElementById('age').value = data.age;
+                document.getElementById('gender').value = data.gender;
+                document.getElementById('weight').value = data.weight;
+                document.getElementById('height').value = data.height;
+                document.getElementById('t2dm-years').value = data.years_on_t2dm;
+                document.getElementById('medication').value = data.medication || '';
+            } else {
+                statusLabel.style.color = 'var(--color-primary)';
+                statusLabel.textContent = 'New Participant Profile';
+                
+                // Clear fields for new participant
+                document.getElementById('age').value = '';
+                document.getElementById('gender').value = '';
+                document.getElementById('weight').value = '';
+                document.getElementById('height').value = '';
+                document.getElementById('t2dm-years').value = '';
+                document.getElementById('medication').value = '';
+            }
+        }
+
+        // Fetch all participants to populate the Admin session controller dropdown
+        async function loadParticipantsDropdown() {
+            if (!supabaseClient) return;
+            
+            const selectEl = document.getElementById('dispatch-participant-select');
+            
+            const { data, error } = await supabaseClient
+                .from('participants')
+                .select('id, participant_id')
+                .order('participant_id', { ascending: true });
+
+            if (error) {
+                console.error('Failed to load participants for dropdown: ', error);
+                return;
+            }
+
+            selectEl.innerHTML = '<option value="" disabled selected>Select Participant</option>';
+            if (data && data.length > 0) {
+                data.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id; // UUID
+                    opt.textContent = p.participant_id; // Human-readable ID
+                    selectEl.appendChild(opt);
+                });
+            } else {
+                selectEl.innerHTML = '<option value="" disabled selected>No profiles registered yet</option>';
+            }
+        }
+
+        // Saves participant demographics to the database (upserts on participant_id)
+        async function saveParticipant(e) {
+            e.preventDefault();
+            if (!supabaseClient) {
+                showToast('Supabase is not connected', 'error');
+                return;
+            }
+
+            const pId = document.getElementById('participant-id').value.trim();
+            const age = parseInt(document.getElementById('age').value);
+            const gender = document.getElementById('gender').value;
+            const weight = parseFloat(document.getElementById('weight').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const t2dmYears = parseInt(document.getElementById('t2dm-years').value);
+            const medication = document.getElementById('medication').value.trim();
+
+            const { data, error } = await supabaseClient
+                .from('participants')
+                .upsert({
+                    participant_id: pId,
+                    age,
+                    gender,
+                    weight,
+                    height,
+                    years_on_t2dm: t2dmYears,
+                    medication: medication || null
+                }, { onConflict: 'participant_id' })
+                .select();
+
+            if (error) {
+                showToast('Failed to save participant profile: ' + error.message, 'error');
+                console.error(error);
+                return;
+            }
+
+            showToast(`Participant ${pId} profile saved successfully!`, 'success');
+            document.getElementById('registration-form').reset();
+            document.getElementById('participant-lookup-status').style.display = 'none';
+
+            // Refresh the admin dispatch select dropdown and auto-select this participant
+            await loadParticipantsDropdown();
+            if (data && data.length > 0) {
+                document.getElementById('dispatch-participant-select').value = data[0].id;
+            }
+            
+            // Reload logs table in case values updated
+            refreshHistoryTable();
+        }
+
+        // Dispatch a new pending acquisition session for an existing participant
+        async function dispatchSession(e) {
+            e.preventDefault();
+            if (!supabaseClient) {
+                showToast('Supabase is not connected', 'error');
+                return;
+            }
+
+            // Check if there is already an active session
+            if (activeSession && activeSession.status !== 'completed') {
+                showToast('An active session is already running. Please complete or reset it first.', 'warning');
+                return;
+            }
+
+            const pUuid = document.getElementById('dispatch-participant-select').value;
+            if (!pUuid) {
+                showToast('Please select a participant', 'warning');
+                return;
+            }
+
+            const selectEl = document.getElementById('dispatch-participant-select');
+            const pId = selectEl.options[selectEl.selectedIndex].text;
+            const sessionKind = document.getElementById('dispatch-session-kind').value;
+
+            // 1. Fetch participant details to display locally on monitor
+            const { data: partData, error: partErr } = await supabaseClient
+                .from('participants')
+                .select('*')
+                .eq('id', pUuid)
+                .single();
+
+            if (partErr) {
+                showToast('Failed to retrieve participant details: ' + partErr.message, 'error');
+                return;
+            }
+
+            // 2. Insert new session entry linking via foreign key UUID
+            const newSession = {
+                participant_uuid: pUuid,
+                session_kind: sessionKind,
+                status: 'pending'
+            };
+
+            const { data, error } = await supabaseClient
+                .from('ppg_sessions')
+                .insert([newSession])
+                .select();
+
+            if (error) {
+                showToast('Failed to dispatch session: ' + error.message, 'error');
+                console.error(error);
+                return;
+            }
+
+            if (data && data.length > 0) {
+                // Populate active session locally with joined details for the monitor UI
+                activeSession = {
+                    id: data[0].id,
+                    participant_uuid: pUuid,
+                    participant_id: pId,
+                    age: partData.age,
+                    gender: partData.gender,
+                    weight: partData.weight,
+                    height: partData.height,
+                    years_on_t2dm: partData.years_on_t2dm,
+                    session_kind: sessionKind,
+                    status: 'pending'
+                };
+                
+                updateMonitorUI();
+                showToast(`Session dispatched for participant ${pId}`, 'success');
+                document.getElementById('dispatch-form').reset();
+            }
+        }
+
+        // Update the monitor area based on activeSession status
+        function updateMonitorUI() {
+            const monitorBox = document.getElementById('monitor-state');
+            const monitorIcon = document.getElementById('monitor-icon');
+            const monitorTitle = document.getElementById('monitor-title');
+            const monitorDesc = document.getElementById('monitor-desc');
+            const activeMeta = document.getElementById('active-session-details');
+            const bglPanel = document.getElementById('bgl-entry-panel');
+            const actionPanel = document.getElementById('session-complete-actions');
+            const sessionActions = document.getElementById('active-session-actions');
+
+            if (!activeSession) {
+                monitorBox.className = 'monitor-state-box';
+                monitorIcon.className = 'ti ti-wifi-off';
+                monitorTitle.textContent = 'No Active Session';
+                monitorDesc.textContent = 'Fill out the form on the left to dispatch a session to the ESP32.';
+                activeMeta.style.display = 'none';
+                bglPanel.style.display = 'none';
+                actionPanel.style.display = 'none';
+                sessionActions.style.display = 'none';
+                return;
+            }
+
+            // Show active session details
+            activeMeta.style.display = 'grid';
+            document.getElementById('active-sess-id').textContent = activeSession.id.substring(0, 8) + '...';
+            document.getElementById('active-part-id').textContent = activeSession.participant_id;
+            document.getElementById('active-metrics').textContent = `${activeSession.age} yrs · ${activeSession.gender} · ${activeSession.weight}kg · ${activeSession.height}cm`;
+            
+            // Format session kind text
+            const kinds = {
+                fasting: 'Fasting',
+                '1hr_post_prandial': '1hr Post Prandial',
+                '2hr_post_prandial': '2hr Post Prandial'
+            };
+            document.getElementById('active-kind').textContent = kinds[activeSession.session_kind] || activeSession.session_kind;
+
+            // Handle status rendering
+            bglPanel.style.display = 'none';
+            actionPanel.style.display = 'none';
+            if (activeSession.status !== 'completed') {
+                sessionActions.style.display = 'block';
+            } else {
+                sessionActions.style.display = 'none';
+            }
+
+            if (activeSession.status === 'pending') {
+                monitorBox.className = 'monitor-state-box active-pending';
+                monitorIcon.className = 'ti ti-device-heart-monitor';
+                monitorTitle.textContent = 'Awaiting ESP32 Device';
+                monitorDesc.textContent = `Awaiting participant ${activeSession.participant_id}. Please check the ESP32 OLED screen and press the GREEN button to start PPG recording.`;
+            } else if (activeSession.status === 'recording') {
+                monitorBox.className = 'monitor-state-box active-recording';
+                monitorIcon.className = 'ti ti-pulse';
+                monitorIcon.className += ' status-dot pulse'; // Add custom pulse anim
+                monitorTitle.textContent = 'Recording Signal...';
+                monitorDesc.textContent = 'The ESP32 is currently measuring the Infrared PPG waveform from the MAX30100 sensor. Please hold still (70 seconds total).';
+            } else if (activeSession.status === 'uploaded') {
+                monitorBox.className = 'monitor-state-box active-uploaded';
+                monitorIcon.className = 'ti ti-cloud-upload';
+                monitorTitle.textContent = 'Acquisition Complete';
+                monitorDesc.textContent = 'PPG waveform was compiled and successfully uploaded. Please record blood glucose level from finger-prick below.';
+                bglPanel.style.display = 'block';
+            } else if (activeSession.status === 'completed') {
+                monitorBox.className = 'monitor-state-box';
+                monitorIcon.className = 'ti ti-circle-check';
+                monitorIcon.style.color = 'var(--color-success)';
+                monitorTitle.textContent = 'Session Complete & Saved';
+                monitorDesc.innerHTML = `Blood glucose level logged: <span class="bgl-value-tag">${activeSession.bgl} mg/dL</span>. Data fully processed.`;
+                actionPanel.style.display = 'block';
+            }
+        }
+
+        // Submits measured BGL to complete session
+        async function submitBGL(e) {
+            e.preventDefault();
+            if (!supabaseClient || !activeSession) return;
+
+            const bglVal = parseFloat(document.getElementById('bgl-val').value);
+            if (isNaN(bglVal)) {
+                showToast('Please enter a valid numeric BGL value', 'warning');
+                return;
+            }
+
+            const { data, error } = await supabaseClient
+                .from('ppg_sessions')
+                .update({ 
+                    bgl: bglVal,
+                    status: 'completed'
+                })
+                .eq('id', activeSession.id)
+                .select();
+
+            if (error) {
+                showToast('Failed to save BGL: ' + error.message, 'error');
+                console.error(error);
+                return;
+            }
+
+            if (data && data.length > 0) {
+                activeSession = { ...activeSession, ...data[0] };
+                updateMonitorUI();
+                showToast('Blood glucose saved successfully. Session completed.', 'success');
+                document.getElementById('bgl-form').reset();
+                refreshHistoryTable();
+            }
+        }
+
+        function resetActiveMonitor() {
+            activeSession = null;
+            updateMonitorUI();
+        }
+
+        // Fetches history and updates the bottom grid
+        async function refreshHistoryTable() {
+            if (!supabaseClient) return;
+
+            const tbody = document.getElementById('history-tbody');
+            
+            // Disable reload button temporarily
+            const reloadBtn = document.getElementById('btn-refresh-table');
+            reloadBtn.disabled = true;
+
+            // Fetch from joined SQL View
+            const { data, error } = await supabaseClient
+                .from('v_sessions_details')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            reloadBtn.disabled = false;
+
+            if (error) {
+                showToast('Failed to fetch records: ' + error.message, 'error');
+                console.error(error);
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center; color: var(--color-text-dim); padding: 2.5rem 0;">
+                            No records found in database.
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('btn-export-csv').disabled = true;
+                return;
+            }
+
+            // Enable export button
+            document.getElementById('btn-export-csv').disabled = false;
+
+            tbody.innerHTML = '';
+            
+            const badgeClasses = {
+                pending: 'badge-pending',
+                recording: 'badge-recording',
+                uploaded: 'badge-uploaded',
+                completed: 'badge-completed'
+            };
+
+            const kinds = {
+                fasting: 'Fasting',
+                '1hr_post_prandial': '1hr Post-Prandial',
+                '2hr_post_prandial': '2hr Post-Prandial'
+            };
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                
+                // Format Date
+                const date = new Date(row.created_at);
+                const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                // Format PPG Data sample length
+                let sampleLengthStr = '—';
+                if (row.ppg_data) {
+                    try {
+                        const parsed = typeof row.ppg_data === 'string' ? JSON.parse(row.ppg_data) : row.ppg_data;
+                        if (Array.isArray(parsed)) {
+                            sampleLengthStr = `${parsed.length} pts`;
+                        } else if (parsed && parsed.ir) {
+                            sampleLengthStr = `${parsed.ir.length} pts`;
+                        } else {
+                            sampleLengthStr = 'Available';
+                        }
+                    } catch (e) {
+                        // If it's a raw string list
+                        const pts = row.ppg_data.split(',').length;
+                        sampleLengthStr = `${pts} pts`;
+                    }
+                }
+                
+                let actionButtons = `
+                    <button onclick="deleteSession('${row.id}')" class="btn btn-outline btn-danger btn-sm" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; border-radius: 6px; box-shadow: none;" title="Delete this session record">
+                        <i class="ti ti-trash"></i>
+                    </button>
+                `;
+                
+                if (row.status === 'uploaded') {
+                    actionButtons = `
+                        <button onclick="loadSessionToMonitor('${row.id}')" class="btn btn-sm" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; border-radius: 6px; margin-right: 0.35rem;" title="Enter BGL for this session">
+                            <i class="ti ti-edit"></i> Enter BGL
+                        </button>
+                    ` + actionButtons;
+                }
+
+                tr.innerHTML = `
+                    <td>${dateStr}</td>
+                    <td class="td-highlight">${row.participant_id}</td>
+                    <td>${row.age}y / ${row.gender.substring(0,1)} / ${row.weight_kg}kg / ${row.height_cm}cm${row.medication ? ' (' + row.medication + ')' : ''}</td>
+                    <td>${row.years_on_t2dm} yrs</td>
+                    <td>${kinds[row.session_kind] || row.session_kind}</td>
+                    <td class="mono" style="font-size:0.8rem; color:var(--color-text-dim)">${sampleLengthStr}</td>
+                    <td class="td-highlight bgl-value-tag">${row.bgl !== null ? row.bgl.toFixed(1) : '—'}</td>
+                    <td>
+                        <span class="badge ${badgeClasses[row.status] || 'badge-completed'}">
+                            <span class="status-dot"></span>
+                            ${row.status}
+                        </span>
+                    </td>
+                    <td style="text-align: center; white-space: nowrap;">
+                        ${actionButtons}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Admin Action: Loads an uploaded session into active monitor for BGL logging
+        async function loadSessionToMonitor(id) {
+            if (!supabaseClient) return;
+
+            showToast('Loading session to monitor...', 'info');
+
+            // Query the join view to get full participant details
+            const { data, error } = await supabaseClient
+                .from('v_sessions_details')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (error) {
+                showToast('Failed to load session details: ' + error.message, 'error');
+                console.error(error);
+                return;
+            }
+
+            if (data) {
+                activeSession = {
+                    id: data.id,
+                    created_at: data.created_at,
+                    participant_uuid: data.participant_uuid,
+                    participant_id: data.participant_id,
+                    age: data.age,
+                    gender: data.gender,
+                    weight: data.weight_kg,
+                    height: data.height_cm,
+                    years_on_t2dm: data.years_on_t2dm,
+                    session_kind: data.session_kind,
+                    ppg_data: data.ppg_data,
+                    bgl: data.bgl,
+                    status: data.status
+                };
+                
+                updateMonitorUI();
+                showToast(`Session for ${data.participant_id} loaded into monitor`, 'success');
+                
+                // Scroll page smoothly to the monitor section
+                document.getElementById('active-monitor-card').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Admin Action: Cancels and deletes the currently active session in DB
+        async function cancelActiveSession() {
+            if (!supabaseClient || !activeSession) return;
+            if (!confirm(`Are you sure you want to cancel and delete the active session for participant ${activeSession.participant_id}?`)) return;
+
+            const targetId = activeSession.id;
+            
+            // Delete from ppg_sessions table
+            const { error } = await supabaseClient
+                .from('ppg_sessions')
+                .delete()
+                .eq('id', targetId);
+
+            if (error) {
+                showToast('Failed to cancel session: ' + error.message, 'error');
+                console.error(error);
+                return;
+            }
+
+            showToast('Active session successfully cancelled and deleted', 'info');
+            activeSession = null;
+            updateMonitorUI();
+            refreshHistoryTable();
+            loadParticipantsDropdown();
+        }
+
+        // Admin Action: Deletes any session record from the table log
+        async function deleteSession(id) {
+            if (!supabaseClient) return;
+            if (!confirm("Are you sure you want to permanently delete this session record?")) return;
+
+            const { error } = await supabaseClient
+                .from('ppg_sessions')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                showToast('Failed to delete session: ' + error.message, 'error');
+                console.error(error);
+                return;
+            }
+
+            showToast('Session record deleted successfully', 'success');
+
+            // If the deleted session is the one currently loaded on the active monitor, clear it
+            if (activeSession && activeSession.id === id) {
+                activeSession = null;
+                updateMonitorUI();
+            }
+
+            refreshHistoryTable();
+            loadParticipantsDropdown();
+        }
+
+        // CSV Exporter
+        async function exportCSV() {
+            if (!supabaseClient) return;
+
+            showToast('Preparing data export...', 'info');
+
+            // Fetch from joined SQL View
+            const { data, error } = await supabaseClient
+                .from('v_sessions_details')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                showToast('Failed to fetch export data: ' + error.message, 'error');
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                showToast('No records to export', 'warning');
+                return;
+            }
+
+            // CSV Headers
+            const headers = [
+                'session_id', 'created_at', 'participant_id', 'age', 'gender', 
+                'weight_kg', 'height_cm', 'years_on_t2dm', 'medication', 'session_kind', 
+                'bgl_mgdl', 'ppg_samples_count', 'ppg_data'
+            ];
+
+            let csvRows = [headers.join(',')];
+
+            data.forEach(row => {
+                let ppgSampleStr = '';
+                let count = 0;
+                
+                if (row.ppg_data) {
+                    try {
+                        const parsed = typeof row.ppg_data === 'string' ? JSON.parse(row.ppg_data) : row.ppg_data;
+                        if (Array.isArray(parsed)) {
+                            ppgSampleStr = parsed.join(';');
+                            count = parsed.length;
+                        } else if (parsed && parsed.ir) {
+                            ppgSampleStr = parsed.ir.join(';');
+                            count = parsed.ir.length;
+                        } else {
+                            ppgSampleStr = String(row.ppg_data);
+                        }
+                    } catch (e) {
+                        ppgSampleStr = String(row.ppg_data).replaceAll(',', ';');
+                        count = ppgSampleStr.split(';').length;
+                    }
+                }
+
+                const line = [
+                    row.id, // Expose the session UUID/id (previously row.session_id which is undefined in details view, or row.id)
+                    row.created_at,
+                    row.participant_id,
+                    row.age,
+                    row.gender,
+                    row.weight_kg,
+                    row.height_cm,
+                    row.years_on_t2dm,
+                    row.medication ? `"${row.medication.replaceAll('"', '""')}"` : '', // handle quotes in medication
+                    row.session_kind,
+                    row.bgl !== null ? row.bgl : '',
+                    count,
+                    `"${ppgSampleStr}"` // wrap in quotes since it contains semicolon delimiters
+                ];
+                csvRows.push(line.join(','));
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `glucosense_dataset_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link); // Required for FF
+
+            link.click();
+            document.body.removeChild(link);
+            showToast('Dataset CSV download initiated', 'success');
+        }
+    </script>
+</body>
+</html>

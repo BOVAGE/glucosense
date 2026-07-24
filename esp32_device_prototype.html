@@ -1,0 +1,461 @@
+<h2 class="sr-only">Interactive prototype of the ESP32 PPG data collection device showing all operating states</h2>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+
+.scene{display:flex;gap:32px;align-items:flex-start;padding:1.5rem 1rem;flex-wrap:wrap}
+
+.device-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.device-label{font-size:12px;color:var(--color-text-tertiary);letter-spacing:.06em}
+
+.device{
+  width:220px;background:var(--color-background-secondary);
+  border-radius:16px;border:1.5px solid var(--color-border-secondary);
+  padding:16px 16px 20px;display:flex;flex-direction:column;gap:12px;
+  position:relative
+}
+.device-top{display:flex;justify-content:space-between;align-items:center}
+.chip-label{font-size:10px;color:var(--color-text-tertiary);letter-spacing:.08em}
+.led{width:8px;height:8px;border-radius:50%;background:#ccc;transition:background .3s}
+.led.on-green{background:#22c55e;box-shadow:0 0 6px #22c55e}
+.led.on-blue{background:#3b82f6}
+.led.on-amber{background:#f59e0b}
+.led.on-red{background:#ef4444}
+
+.oled{
+  background:#0a0a0a;border-radius:6px;border:2px solid #1a1a1a;
+  height:88px;padding:8px 10px;display:flex;flex-direction:column;
+  justify-content:space-around;font-family:var(--font-mono);position:relative;
+  overflow:hidden
+}
+.oled-line{font-size:11px;color:#00ff88;white-space:nowrap;transition:all .2s;line-height:1.3}
+.oled-line.dim{color:#004422}
+.oled-line.bright{color:#00ffaa;font-weight:500}
+.oled-line.warn{color:#ffaa00}
+.oled-line.err{color:#ff4444}
+.oled-line.ok{color:#00ff88}
+.oled-scanline{
+  position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,255,136,.04) 3px,rgba(0,255,136,.04) 4px);
+  pointer-events:none;border-radius:4px
+}
+
+.sensor-area{
+  background:#1a1a1a;border-radius:8px;height:44px;
+  display:flex;align-items:center;justify-content:center;gap:8px
+}
+.sensor-dot{width:12px;height:12px;border-radius:50%;background:#cc3333;transition:all .4s}
+.sensor-dot.active{background:#ff2200;box-shadow:0 0 8px #ff2200}
+.sensor-dot.ir{background:#330066;width:10px;height:10px}
+.sensor-dot.ir.active{background:#8800ff;box-shadow:0 0 6px #8800ff}
+.sensor-label{font-size:9px;color:#555;letter-spacing:.05em}
+
+.buttons-row{display:flex;gap:10px;justify-content:center}
+.hw-btn{
+  width:72px;height:28px;border-radius:20px;border:none;cursor:pointer;
+  font-size:11px;font-weight:500;letter-spacing:.04em;transition:transform .1s,opacity .1s;
+  display:flex;align-items:center;justify-content:center;gap:4px
+}
+.hw-btn:active{transform:scale(.95)}
+.hw-btn.green{background:#16a34a;color:#fff}
+.hw-btn.red{background:#dc2626;color:#fff}
+.hw-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+
+.sd-indicator{
+  position:absolute;bottom:8px;right:10px;font-size:9px;
+  color:var(--color-text-tertiary);display:flex;align-items:center;gap:3px
+}
+
+.panel{flex:1;min-width:240px;display:flex;flex-direction:column;gap:12px}
+
+.state-card{
+  background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);
+  border-radius:var(--border-radius-lg);padding:12px 14px
+}
+.state-title{font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.state-badge{
+  padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500
+}
+
+.steps{display:flex;flex-direction:column;gap:0}
+.step{display:flex;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.step:last-child{border-bottom:none}
+.step-num{
+  width:20px;height:20px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;
+  background:var(--color-background-secondary);color:var(--color-text-tertiary);
+  margin-top:1px;transition:all .3s
+}
+.step-num.active{background:#16a34a;color:#fff}
+.step-num.done{background:#3b82f6;color:#fff}
+.step-text{font-size:12px;color:var(--color-text-secondary);line-height:1.5}
+.step-text.active{color:var(--color-text-primary);font-weight:500}
+
+.supabase-card{
+  background:var(--color-background-secondary);border-radius:var(--border-radius-md);
+  padding:10px 12px;font-size:11px;font-family:var(--font-mono);
+  color:var(--color-text-secondary);line-height:1.7
+}
+.db-key{color:#534AB7}
+.db-val{color:#0F6E56}
+.db-val.pending{color:#BA7517}
+.db-val.complete{color:#16a34a}
+
+.progress-bar{
+  height:4px;background:var(--color-background-secondary);border-radius:2px;overflow:hidden;margin:4px 0
+}
+.progress-fill{
+  height:100%;background:#16a34a;border-radius:2px;transition:width .9s linear;width:0%
+}
+
+.log{
+  font-size:11px;font-family:var(--font-mono);color:var(--color-text-secondary);
+  display:flex;flex-direction:column;gap:3px;max-height:80px;overflow-y:auto
+}
+.log-entry{display:flex;gap:6px}
+.log-ts{color:var(--color-text-tertiary)}
+.log-msg.info{color:#3b82f6}
+.log-msg.ok{color:#16a34a}
+.log-msg.warn{color:#f59e0b}
+.log-msg.err{color:#ef4444}
+
+.sample-viz{
+  display:flex;align-items:flex-end;gap:1px;height:36px;
+  background:var(--color-background-secondary);border-radius:4px;padding:4px;overflow:hidden
+}
+.sample-bar{
+  flex:1;background:var(--color-border-tertiary);border-radius:1px;min-width:2px;
+  transition:height .05s
+}
+</style>
+
+<div class="scene">
+
+<div class="device-wrap">
+  <div class="device-label">ESP32-S3 DEVICE</div>
+  <div class="device">
+    <div class="device-top">
+      <span class="chip-label">ESP32-S3</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <div class="led" id="led-wifi" title="Wi-Fi"></div>
+        <div class="led" id="led-rec" title="Recording"></div>
+      </div>
+    </div>
+
+    <div class="oled" id="oled">
+      <div class="oled-scanline"></div>
+      <div class="oled-line dim" id="ol1">---  PPG DEVICE  ---</div>
+      <div class="oled-line dim" id="ol2">booting...</div>
+      <div class="oled-line dim" id="ol3"></div>
+      <div class="oled-line dim" id="ol4"></div>
+      <div class="oled-line dim" id="ol5"></div>
+    </div>
+
+    <div class="sensor-area">
+      <div>
+        <div class="sensor-dot" id="led-red"></div>
+      </div>
+      <div class="sensor-dot ir" id="led-ir"></div>
+      <span class="sensor-label">MAX30102</span>
+    </div>
+
+    <div class="progress-bar" id="prog-wrap" style="display:none">
+      <div class="progress-fill" id="prog-fill"></div>
+    </div>
+
+    <div class="buttons-row">
+      <button class="hw-btn green" id="btn-green" disabled>
+        <i class="ti ti-player-play" aria-hidden="true"></i> Start
+      </button>
+      <button class="hw-btn red" id="btn-red" disabled>
+        <i class="ti ti-refresh" aria-hidden="true"></i> Refresh
+      </button>
+    </div>
+
+    <div class="sd-indicator" id="sd-ind">
+      <i class="ti ti-device-sd-card" aria-hidden="true"></i> SD ready
+    </div>
+  </div>
+  <div class="device-label" style="margin-top:4px">USB power bank →</div>
+</div>
+
+<div class="panel">
+
+  <div class="state-card">
+    <div class="state-title">
+      Current state
+      <span class="state-badge" id="state-badge" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">Booting</span>
+    </div>
+    <div class="steps" id="steps">
+      <div class="step" id="s1">
+        <div class="step-num" id="sn1">1</div>
+        <div class="step-text" id="st1">Connect to Wi-Fi hotspot</div>
+      </div>
+      <div class="step" id="s2">
+        <div class="step-num" id="sn2">2</div>
+        <div class="step-text" id="st2">Poll Supabase for pending session</div>
+      </div>
+      <div class="step" id="s3">
+        <div class="step-num" id="sn3">3</div>
+        <div class="step-text" id="st3">Researcher confirms ID + session kind</div>
+      </div>
+      <div class="step" id="s4">
+        <div class="step-num" id="sn4">4</div>
+        <div class="step-text" id="st4">Press green → 60s PPG acquisition</div>
+      </div>
+      <div class="step" id="s5">
+        <div class="step-num" id="sn5">5</div>
+        <div class="step-text" id="st5">Upload 3,000 samples to Supabase</div>
+      </div>
+      <div class="step" id="s6">
+        <div class="step-num" id="sn6">6</div>
+        <div class="step-text" id="st6">Researcher enters BGL → press red for next</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="state-card">
+    <div class="state-title">Supabase — active session</div>
+    <div class="supabase-card" id="db-view">
+      <span style="color:var(--color-text-tertiary)">waiting for session...</span>
+    </div>
+  </div>
+
+  <div class="state-card" id="viz-card" style="display:none">
+    <div class="state-title">Live PPG signal</div>
+    <div class="sample-viz" id="sample-viz"></div>
+    <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:4px" id="sample-count">0 / 3000 samples</div>
+  </div>
+
+  <div class="state-card">
+    <div class="state-title">System log</div>
+    <div class="log" id="sys-log"></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id)
+const oledLines = [1,2,3,4,5].map(i => $(`ol${i}`))
+
+const STATES = {
+  BOOTING:'Booting', CONNECTING:'Connecting', NO_SESSION:'No session',
+  READY:'Ready', RECORDING:'Recording', UPLOADING:'Uploading',
+  DONE:'Saved', FAILED:'SD fallback'
+}
+
+let state = STATES.BOOTING
+let sessionId = null, participantId = null, sessionKind = null
+let recInterval = null, samplesSent = 0, recSeconds = 0
+let ppgBars = []
+
+const SESSION_DATA = {id:'sess_a1b2c3', participant_id:'P003', session_kind:'Fasting', status:'pending', created_at:'2026-05-23T09:14:00Z'}
+
+function log(msg, type='info'){
+  const el = document.createElement('div')
+  el.className='log-entry'
+  const now = new Date()
+  const ts = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`
+  el.innerHTML=`<span class="log-ts">${ts}</span><span class="log-msg ${type}">${msg}</span>`
+  const log=$('sys-log')
+  log.appendChild(el)
+  log.scrollTop=log.scrollHeight
+}
+
+function setOled(lines, classes){
+  oledLines.forEach((el,i)=>{
+    el.textContent = lines[i] || ''
+    el.className = 'oled-line ' + (classes?.[i] || 'dim')
+  })
+}
+
+function setBadge(text, bg, col){
+  const b=$('state-badge')
+  b.textContent=text
+  b.style.background=bg
+  b.style.color=col
+}
+
+function setStep(active){
+  for(let i=1;i<=6;i++){
+    const num=$(`sn${i}`), txt=$(`st${i}`)
+    if(i<active){ num.className='step-num done'; txt.className='step-text' }
+    else if(i===active){ num.className='step-num active'; txt.className='step-text active' }
+    else { num.className='step-num'; txt.className='step-text' }
+  }
+}
+
+function updateDb(data){
+  const dv=$('db-view')
+  if(!data){ dv.innerHTML='<span style="color:var(--color-text-tertiary)">waiting for session...</span>'; return }
+  dv.innerHTML=`
+    <div><span class="db-key">id: </span><span class="db-val">"${data.id}"</span></div>
+    <div><span class="db-key">participant_id: </span><span class="db-val">"${data.participant_id}"</span></div>
+    <div><span class="db-key">session_kind: </span><span class="db-val">"${data.session_kind}"</span></div>
+    <div><span class="db-key">status: </span><span class="db-val ${data.status}">"${data.status}"</span></div>
+    <div><span class="db-key">sample_count: </span><span class="db-val">${data.sample_count||'—'}</span></div>
+  `
+}
+
+function initViz(){
+  const viz=$('sample-viz')
+  viz.innerHTML=''
+  ppgBars=[]
+  for(let i=0;i<60;i++){
+    const b=document.createElement('div')
+    b.className='sample-bar'
+    b.style.height='4px'
+    viz.appendChild(b)
+    ppgBars.push(b)
+  }
+  $('viz-card').style.display='block'
+}
+
+function updateViz(){
+  const h = 4 + Math.random()*28 + Math.sin(Date.now()/180)*10
+  ppgBars.shift()
+  const b=document.createElement('div')
+  b.className='sample-bar'
+  b.style.height=Math.max(4,Math.min(32,h))+'px'
+  b.style.background='#1D9E75'
+  $('sample-viz').appendChild(b)
+  ppgBars.push(b)
+}
+
+async function runBoot(){
+  state=STATES.BOOTING
+  setBadge('Booting','var(--color-background-secondary)','var(--color-text-secondary)')
+  setStep(1)
+  setOled(['  PPG DEVICE v1.0','','  Booting...','',''],['bright','dim','dim','dim','dim'])
+  $('led-wifi').className='led'
+  $('led-rec').className='led'
+  $('btn-green').disabled=true
+  $('btn-red').disabled=true
+  log('Device powered on')
+  await delay(1200)
+  await runConnect()
+}
+
+async function runConnect(){
+  state=STATES.CONNECTING
+  setBadge('Connecting','#dbeafe','#1e40af')
+  setStep(1)
+  setOled(['  Connecting...','','  WiFi: ResearchHot','  Please wait...',''],['bright','dim','dim','dim','dim'])
+  log('Connecting to Wi-Fi: ResearchHotspot')
+  await delay(1800)
+  $('led-wifi').className='led on-blue'
+  log('Wi-Fi connected · IP: 192.168.4.23','ok')
+  setOled(['  Connected','','  Polling Supabase...','',''],['ok','dim','dim','dim','dim'])
+  log('GET ppg_data?status=pending LIMIT 1')
+  await delay(1400)
+  await runReady()
+}
+
+async function runReady(){
+  state=STATES.READY
+  sessionId=SESSION_DATA.id; participantId=SESSION_DATA.participant_id; sessionKind=SESSION_DATA.session_kind
+  setBadge('Ready','#dcfce7','#15803d')
+  setStep(3)
+  updateDb({...SESSION_DATA, sample_count:null})
+  $('led-wifi').className='led on-green'
+  $('led-rec').className='led'
+  setOled(
+    ['     READY','','ID:    '+participantId,'Kind:  '+sessionKind,'GRN=Go  RED=Refresh'],
+    ['bright','dim','ok','ok','dim']
+  )
+  $('btn-green').disabled=false
+  $('btn-red').disabled=false
+  log(`Session found: ${participantId} · ${sessionKind}`,'ok')
+  log('Confirm on screen then press GREEN')
+}
+
+async function runRecord(){
+  if(state!==STATES.READY) return
+  state=STATES.RECORDING
+  setBadge('Recording','#fef9c3','#854d0e')
+  setStep(4)
+  $('btn-green').disabled=true
+  $('btn-red').disabled=true
+  $('led-rec').className='led on-amber'
+  $('led-red').classList.add('active')
+  $('led-ir').classList.add('active')
+  $('prog-wrap').style.display='block'
+  $('prog-fill').style.width='0%'
+  samplesSent=0; recSeconds=0
+  initViz()
+  log(`Recording started: ${participantId} · ${sessionKind}`)
+
+  recInterval=setInterval(()=>{
+    recSeconds++
+    samplesSent=recSeconds*50
+    const pct=(recSeconds/60)*100
+    $('prog-fill').style.width=pct+'%'
+    updateViz()
+    const left=60-recSeconds
+    setOled(
+      ['  RECORDING','  '+participantId+' · '+sessionKind,'','  Time left: '+left+'s','  Samples: '+samplesSent],
+      ['warn','dim','dim','bright','dim']
+    )
+    $('sample-count').textContent=samplesSent+' / 3000 samples'
+    if(recSeconds>=60){ clearInterval(recInterval); runUpload() }
+  },200)
+}
+
+async function runUpload(){
+  state=STATES.UPLOADING
+  setBadge('Uploading','#dbeafe','#1e40af')
+  setStep(5)
+  $('led-red').classList.remove('active')
+  $('led-ir').classList.remove('active')
+  $('led-rec').className='led on-blue'
+  setOled(['  Done. Uploading...','','  HTTPS PATCH','  Supabase...',''],['bright','dim','dim','dim','dim'])
+  log(`Acquisition complete: ${samplesSent} samples`)
+  log('Serialising to JSON array...')
+  await delay(800)
+  log('PATCH /rest/v1/ppg_data?id=eq.'+sessionId)
+  await delay(1200)
+  log('HTTP 204 — upload successful','ok')
+  await runDone()
+}
+
+async function runDone(){
+  state=STATES.DONE
+  setBadge('Saved ✓','#dcfce7','#15803d')
+  setStep(6)
+  $('led-rec').className='led on-green'
+  $('prog-fill').style.width='100%'
+  updateDb({...SESSION_DATA, status:'complete', sample_count:samplesSent})
+  setOled(
+    ['  Saved OK','','  '+participantId+' · '+sessionKind,'  '+samplesSent+' samples','  RED = Next session'],
+    ['ok','dim','ok','dim','dim']
+  )
+  $('btn-red').disabled=false
+  log(`Session saved. Enter BGL on web form.`,'ok')
+  log('Press RED to load next session')
+}
+
+async function runRefresh(){
+  if(state===STATES.RECORDING||state===STATES.UPLOADING) return
+  $('btn-green').disabled=true
+  $('btn-red').disabled=true
+  $('led-wifi').className='led on-blue'
+  setOled(['  Refreshing...','','  Polling Supabase...','',''],['bright','dim','dim','dim','dim'])
+  setBadge('Polling','#dbeafe','#1e40af')
+  log('RED pressed — re-polling Supabase')
+  updateDb(null)
+  $('viz-card').style.display='none'
+  $('prog-wrap').style.display='none'
+  await delay(1200)
+  log('GET ppg_data?status=pending LIMIT 1')
+  await delay(600)
+  await runReady()
+}
+
+const delay=ms=>new Promise(r=>setTimeout(r,ms))
+
+$('btn-green').addEventListener('click',()=>{ if(state===STATES.READY) runRecord() })
+$('btn-red').addEventListener('click',()=>{ if(state!==STATES.RECORDING&&state!==STATES.UPLOADING) runRefresh() })
+
+runBoot()
+</script>
