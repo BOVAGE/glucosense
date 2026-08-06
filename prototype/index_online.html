@@ -734,6 +734,71 @@
                 height: 44px;
             }
         }
+
+        /* Physiological Stats styling */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            width: 100%;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: var(--transition);
+        }
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+        .stat-icon.fasting {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--color-warning);
+        }
+        .stat-icon.post-1h {
+            background: rgba(0, 242, 254, 0.1);
+            color: var(--color-primary);
+        }
+        .stat-icon.post-2h {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--color-success);
+        }
+        .stat-icon.total {
+            background: rgba(168, 85, 247, 0.1);
+            color: #a855f7;
+        }
+        .stat-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--color-text-muted);
+            letter-spacing: 0.05em;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-text);
+            font-family: var(--font-mono);
+        }
     </style>
 </head>
 <body>
@@ -961,6 +1026,38 @@
                     <button onclick="exportCSV()" class="btn btn-sm" id="btn-export-csv" disabled title="Export data to CSV">
                         <i class="ti ti-download" aria-hidden="true"></i> Export CSV for Python
                     </button>
+                </div>
+            </div>
+
+            <!-- Statistics Grid -->
+            <div id="stats-container" class="stats-grid" style="display: none; margin-bottom: 1.5rem;">
+                <div class="stat-card">
+                    <div class="stat-icon fasting"><i class="ti ti-cookie-off"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Fasting Sessions</span>
+                        <span class="stat-value" id="stats-fasting-count">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon post-1h"><i class="ti ti-coffee"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">1hr Post-Prandial</span>
+                        <span class="stat-value" id="stats-1hr-count">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon post-2h"><i class="ti ti-soup"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">2hr Post-Prandial</span>
+                        <span class="stat-value" id="stats-2hr-count">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon total"><i class="ti ti-database-heart"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Recordings</span>
+                        <span class="stat-value" id="stats-total-count">0</span>
+                    </div>
                 </div>
             </div>
 
@@ -1528,11 +1625,39 @@
                     </tr>
                 `;
                 document.getElementById('btn-export-csv').disabled = true;
+                
+                // Reset stats to 0
+                document.getElementById('stats-fasting-count').textContent = '0';
+                document.getElementById('stats-1hr-count').textContent = '0';
+                document.getElementById('stats-2hr-count').textContent = '0';
+                document.getElementById('stats-total-count').textContent = '0';
+                document.getElementById('stats-container').style.display = 'grid';
                 return;
             }
 
             // Enable export button
             document.getElementById('btn-export-csv').disabled = false;
+
+            // Calculate statistics for completed/uploaded sessions
+            let fastingCount = 0;
+            let post1hCount = 0;
+            let post2hCount = 0;
+            
+            data.forEach(row => {
+                if (row.status === 'completed' || row.status === 'uploaded') {
+                    if (row.session_kind === 'fasting') fastingCount++;
+                    else if (row.session_kind === '1hr_post_prandial') post1hCount++;
+                    else if (row.session_kind === '2hr_post_prandial') post2hCount++;
+                }
+            });
+            
+            const totalCount = fastingCount + post1hCount + post2hCount;
+            
+            document.getElementById('stats-fasting-count').textContent = fastingCount;
+            document.getElementById('stats-1hr-count').textContent = post1hCount;
+            document.getElementById('stats-2hr-count').textContent = post2hCount;
+            document.getElementById('stats-total-count').textContent = totalCount;
+            document.getElementById('stats-container').style.display = 'grid';
 
             tbody.innerHTML = '';
             
