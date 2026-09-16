@@ -1,2 +1,7 @@
 .venv/
 data/
+scratch/
+figures/
+papers/
+catboost_info/
+results/
