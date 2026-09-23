@@ -5,3 +5,4 @@ figures/
 papers/
 catboost_info/
 results/
+*.h
